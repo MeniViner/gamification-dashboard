@@ -94,7 +94,6 @@ export function useConferenceData() {
     };
 
     const removeUnit = (id) => {
-        if (!confirm("Are you sure?")) return;
         saveUnits(units.filter(u => u.id !== id));
     };
 
@@ -103,14 +102,12 @@ export function useConferenceData() {
     };
 
     const resetData = () => {
-        if (!confirm("לחיצה על אישור ימחק את כללל נתוני היחידות!! בטוח?")) return;
-        const initial = Array.from({ length: 40 }, (_, i) => ({
-            id: i + 1,
-            name: `Unit ${i + 1}`,
-            score: 0,
-            logo: null
+        // איפוס רק הניקודים, שמירה על שמות ותמונות
+        const resetUnits = units.map(unit => ({
+            ...unit,
+            score: 0
         }));
-        saveUnits(initial);
+        saveUnits(resetUnits);
     };
 
     return {

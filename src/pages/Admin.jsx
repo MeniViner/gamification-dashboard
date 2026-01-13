@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useConferenceData } from '../hooks/useConferenceData';
-import { Search, Plus, Minus, Settings, Trash2, Pen, Save, X, Upload, LayoutGrid, List as ListIcon } from 'lucide-react';
+import { Search, Plus, Minus, Settings, Trash2, Pen, Save, X, Upload, LayoutGrid, List as ListIcon, AlertTriangle } from 'lucide-react';
 import clsx from 'clsx';
 
 export default function Admin() {
@@ -12,6 +12,7 @@ export default function Admin() {
     const [editForm, setEditForm] = useState({ name: "", logo: "" });
     const [showConfig, setShowConfig] = useState(false);
     const [newUnitName, setNewUnitName] = useState("");
+    const [modalState, setModalState] = useState({ show: false, type: null, unitId: null, unitName: null });
 
     // Filter & Sort (Always Alphabetical)
     const filteredUnits = useMemo(() => {
@@ -51,6 +52,27 @@ export default function Admin() {
             };
             reader.readAsDataURL(file);
         }
+    };
+
+    const handleResetClick = () => {
+        setModalState({ show: true, type: 'reset', unitId: null, unitName: null });
+    };
+
+    const handleRemoveClick = (unitId, unitName) => {
+        setModalState({ show: true, type: 'remove', unitId, unitName });
+    };
+
+    const handleModalConfirm = () => {
+        if (modalState.type === 'reset') {
+            resetData();
+        } else if (modalState.type === 'remove') {
+            removeUnit(modalState.unitId);
+        }
+        setModalState({ show: false, type: null, unitId: null, unitName: null });
+    };
+
+    const handleModalCancel = () => {
+        setModalState({ show: false, type: null, unitId: null, unitName: null });
     };
 
     return (
@@ -124,7 +146,7 @@ export default function Admin() {
                             </button>
 
                             <button
-                                onClick={resetData}
+                                onClick={handleResetClick}
                                 title="איפוס נתונים כללי"
                                 className="p-2.5 rounded-xl transition-all border border-white/10 bg-slate-800/50 text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/30"
                             >
@@ -136,7 +158,7 @@ export default function Admin() {
 
                 {/* Config Panel (Collapsible) */}
                 {showConfig && (
-                    <div className="max-w-7xl mx-auto mt-3 lg:mt-4 p-4 lg:p-6 bg-slate-900/90 rounded-2xl border border-white/10 animate-in slide-in-from-top-4 shadow-2xl backdrop-blur-md">
+                    <div className="max-w-7xl mx-auto mt-3 lg:mt-4 p-4 lg:p-6 bg-slate-900/90 rounded-2xl border border-white/10 shadow-2xl backdrop-blur-md transition-all duration-300">
                         <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 lg:gap-8">
                             <div className="flex flex-col gap-2">
                                 <label className="text-sm font-bold text-slate-400">יחידות בעמוד (קרוסלה)</label>
@@ -229,6 +251,16 @@ export default function Admin() {
                     )}
                 </div>
             </div >
+
+            {/* Confirmation Modal */}
+            {modalState.show && (
+                <ConfirmModal
+                    type={modalState.type}
+                    unitName={modalState.unitName}
+                    onConfirm={handleModalConfirm}
+                    onCancel={handleModalCancel}
+                />
+            )}
         </div >
     );
 }
@@ -239,6 +271,77 @@ function StatBadge({ label, value, color }) {
         <div className={`flex items-center gap-2 px-3 py-1 rounded-full border border-white/5 ${color}`}>
             <span className="font-mono font-bold text-lg">{value}</span>
             <span className="text-xs opacity-70">{label}</span>
+        </div>
+    );
+}
+
+function ConfirmModal({ type, unitName, onConfirm, onCancel }) {
+    const isReset = type === 'reset';
+    const isRemove = type === 'remove';
+
+    return (
+        <div 
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
+            onClick={onCancel}
+            dir="rtl"
+            style={{ animation: 'fadeIn 0.3s ease-out' }}
+        >
+            <div 
+                className="relative bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl max-w-md w-full p-6 lg:p-8 transition-all duration-300"
+                onClick={(e) => e.stopPropagation()}
+                style={{ animation: 'slideUp 0.3s ease-out' }}
+            >
+                {/* Background Glow */}
+                <div className="absolute -top-20 -right-20 w-40 h-40 bg-rose-500/20 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none" />
+
+                {/* Icon */}
+                <div className="flex justify-center mb-4">
+                    <div className={`p-4 rounded-2xl ${isReset ? 'bg-rose-500/20' : 'bg-rose-500/20'}`}>
+                        <AlertTriangle className={`w-8 h-8 ${isReset ? 'text-rose-400' : 'text-rose-400'}`} />
+                    </div>
+                </div>
+
+                {/* Title */}
+                <h2 className="text-2xl font-black text-white text-center mb-3">
+                    {isReset ? 'איפוס ניקודים' : 'מחיקת יחידה'}
+                </h2>
+
+                {/* Message */}
+                <p className="text-slate-300 text-center mb-6 leading-relaxed">
+                    {isReset ? (
+                        <>
+                            <span className="font-bold text-rose-400">לחיצה על אישור יאפס את כל הניקודים</span> של היחידות!
+                            <br />
+                            <span className="text-slate-400 text-sm mt-2 block">השמות והתמונות יישמרו.</span>
+                        </>
+                    ) : (
+                        <>
+                            האם אתה בטוח שברצונך למחוק את היחידה
+                            <br />
+                            <span className="font-bold text-rose-400 text-lg">{unitName}</span>?
+                            <br />
+                            <span className="text-slate-400 text-sm mt-2 block">פעולה זו לא ניתנת לביטול.</span>
+                        </>
+                    )}
+                </p>
+
+                {/* Buttons */}
+                <div className="flex gap-3">
+                    <button
+                        onClick={onCancel}
+                        className="flex-1 px-4 py-3 rounded-xl bg-slate-800/50 hover:bg-slate-800 text-slate-300 hover:text-white font-bold transition-all border border-white/10 hover:border-white/20"
+                    >
+                        ביטול
+                    </button>
+                    <button
+                        onClick={onConfirm}
+                        className="flex-1 px-4 py-3 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold transition-all shadow-lg hover:shadow-rose-500/30 active:scale-95"
+                    >
+                        {isReset ? 'איפוס' : 'מחיקה'}
+                    </button>
+                </div>
+            </div>
         </div>
     );
 }
@@ -309,7 +412,7 @@ function AdminUnitCard({ unit, editingId, editForm, setEditForm, handleLogoUploa
                                 <button onClick={() => handleEditClick(unit)} className="p-1.5 text-slate-400 hover:text-cyan-400 hover:bg-cyan-400/10 rounded-lg transition-colors touch-manipulation">
                                     <Pen size={14} />
                                 </button>
-                                <button onClick={() => removeUnit(unit.id)} className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-400/10 rounded-lg transition-colors touch-manipulation">
+                                <button onClick={() => handleRemoveClick(unit.id, unit.name)} className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-400/10 rounded-lg transition-colors touch-manipulation">
                                     <Trash2 size={14} />
                                 </button>
                             </div>
