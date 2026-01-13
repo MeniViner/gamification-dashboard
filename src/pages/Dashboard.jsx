@@ -10,8 +10,17 @@ const ROTATION_INTERVAL = 10000;
 export default function Dashboard() {
     const { units, config } = useConferenceData();
     const [page, setPage] = useState(0);
+    const [currentTime, setCurrentTime] = useState(new Date());
 
     const PAGE_SIZE = config?.pageSize || 10;
+
+    // Update clock every second
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 1000);
+        return () => clearInterval(timer);
+    }, []);
 
     // Sort and Rank
     const sortedUnits = useMemo(() => {
@@ -56,13 +65,18 @@ export default function Dashboard() {
             <div className="absolute top-[-20%] right-[10%] w-[500px] h-[500px] bg-cyan-900/20 rounded-full blur-[120px] pointer-events-none" />
             <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-blue-900/10 rounded-full blur-[150px] pointer-events-none" />
 
-            {/* Header Title */}
-            <h1 className="absolute top-6 lg:top-10 left-0 w-full text-center text-2xl lg:text-5xl font-black text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] z-40 tracking-wider">
-                כנס הדרכה ז"י | 2026
-            </h1>
+            {/* Header Title with Clock */}
+            <div className="absolute top-6 lg:top-10 left-0 w-full flex items-center px-4 lg:px-8 z-40">
+                <div className="flex-shrink-0">
+                    <DigitalClock currentTime={currentTime} />
+                </div>
+                <h1 className="absolute left-1/2 -translate-x-1/2 text-2xl lg:text-5xl font-black text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] tracking-wider whitespace-nowrap">
+                    כנס הדרכה ז"י | 2026
+                </h1>
+            </div>
 
             {/* Absolute Header - Top Left Logos */}
-            <div className="absolute top-16 left-1/2 -translate-x-1/2 lg:top-8 lg:left-8 lg:translate-x-0 flex gap-2 lg:gap-4 z-50 scale-50 lg:scale-100">
+            <div className="absolute top-16 left-1/2 -translate-x-1/2 lg:top-5 lg:left-8 lg:translate-x-0 flex gap-2 lg:gap-4 z-50 scale-50 lg:scale-100">
                 {/* Logo 1 - Alpha */}
                 <img
                     src="/logos/alpha logo1.png"
@@ -215,6 +229,77 @@ export default function Dashboard() {
 }
 
 // Sub-components
+function DigitalClock({ currentTime }) {
+    const hours = String(currentTime.getHours()).padStart(2, '0');
+    const minutes = String(currentTime.getMinutes()).padStart(2, '0');
+    const seconds = String(currentTime.getSeconds()).padStart(2, '0');
+    
+    const day = currentTime.getDate();
+    const month = currentTime.getMonth() + 1;
+    const year = currentTime.getFullYear();
+    
+    const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+    const dayName = days[currentTime.getDay()];
+    
+    return (
+        <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-slate-900/80 backdrop-blur-xl rounded-xl lg:rounded-2xl px-4 lg:px-6 py-2 lg:py-3 border border-cyan-500/30 shadow-2xl relative overflow-hidden"
+            dir="ltr"
+        >
+            {/* Glow effect */}
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 pointer-events-none" />
+            <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-purple-500/20 rounded-2xl blur-xl opacity-50 pointer-events-none" />
+            
+            <div className="relative z-10 flex items-center gap-2 lg:gap-3">
+                {/* Time Display - LTR */}
+                <div className="flex items-center gap-1 lg:gap-1.5">
+                    <motion.span
+                        key={hours}
+                        initial={{ scale: 1.2, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.3 }}
+                        className="text-xl lg:text-3xl font-black font-mono text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.8)]"
+                    >
+                        {hours}
+                    </motion.span>
+                    <span className="text-xl lg:text-3xl font-black text-cyan-500/50 animate-pulse">:</span>
+                    <motion.span
+                        key={minutes}
+                        initial={{ scale: 1.2, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.3 }}
+                        className="text-xl lg:text-3xl font-black font-mono text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.8)]"
+                    >
+                        {minutes}
+                    </motion.span>
+                    <span className="text-lg lg:text-2xl font-black text-cyan-500/50 animate-pulse">:</span>
+                    <motion.span
+                        key={seconds}
+                        initial={{ scale: 1.2, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.3 }}
+                        className="text-lg lg:text-2xl font-black font-mono text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]"
+                    >
+                        {seconds}
+                    </motion.span>
+                </div>
+                
+                {/* Separator */}
+                <div className="w-px h-6 lg:h-8 bg-cyan-500/30" />
+                
+                {/* Date Display */}
+                <div className="flex items-center gap-1.5 lg:gap-2">
+                    <div className="text-xs lg:text-xl mt-1 font-bold text-slate-300 whitespace-nowrap">
+                        {day}/{month}/26
+                    </div>
+                </div>
+            </div>
+        </motion.div>
+    );
+}
+
 function StatCard({ icon: Icon, label, value, color }) {
     return (
         <div className="bg-slate-900/40 p-2 lg:p-4 rounded-xl lg:rounded-2xl border border-white/5 flex items-center gap-3 lg:gap-5 hover:bg-slate-900/60 transition-colors group">
