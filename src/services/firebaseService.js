@@ -23,7 +23,7 @@ export async function saveUnitsData(unitsData) {
             units: unitsData,
             lastUpdated: new Date().toISOString()
         });
-        console.log('✅ Units data saved to Firebase');
+        // console.log('✅ Units data saved to Firebase');
         return true;
     } catch (error) {
         console.error('❌ Error saving units to Firebase:', error);
@@ -47,7 +47,7 @@ export async function loadUnitsData() {
 
         if (docSnap.exists()) {
             const data = docSnap.data();
-            console.log('✅ Units data loaded from Firebase');
+            // console.log('✅ Units data loaded from Firebase');
             return data.units || null;
         } else {
             console.log('ℹ️ No units data found in Firebase');
@@ -128,7 +128,7 @@ export function subscribeToUnitsData(callback) {
         const unsubscribe = onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                console.log('🔄 Units data updated from Firebase');
+                // console.log('🔄 Units data updated from Firebase');
                 callback(data.units || null);
             }
         }, (error) => {
@@ -158,7 +158,7 @@ export function subscribeToConfig(callback) {
         const unsubscribe = onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                console.log('🔄 Config updated from Firebase');
+                // console.log('🔄 Config updated from Firebase');
                 callback(data.config || null);
             }
         }, (error) => {

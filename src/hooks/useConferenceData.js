@@ -33,7 +33,7 @@ const getInitialData = async (storageType = 'localStorage') => {
         try {
             const firebaseData = await loadUnitsData();
             if (firebaseData) {
-                console.log('✅ Loaded data from Firebase');
+                // console.log('✅ Loaded data from Firebase');
                 return firebaseData;
             }
         } catch (error) {
@@ -54,7 +54,7 @@ export function useConferenceData() {
 
     // Auto-detect: Use Firebase if configured, otherwise use config setting
     const storageType = isFirebaseConfigured() ? 'firebase' : (config.storageType || 'localStorage');
-    console.log('📊 Storage mode:', storageType, '| Firebase configured:', isFirebaseConfigured());
+    // console.log('📊 Storage mode:', storageType, '| Firebase configured:', isFirebaseConfigured());
 
     const [units, setUnits] = useState(getDefaultData); // Start with default, will load async
     const [isLoading, setIsLoading] = useState(false);
@@ -93,7 +93,7 @@ export function useConferenceData() {
     useEffect(() => {
         if (storageType !== 'firebase') return;
 
-        console.log('🔥 Firebase real-time listener activated');
+        // console.log('🔥 Firebase real-time listener activated');
         let unsubscribeUnits = null;
 
         // Subscribe to units changes only
@@ -101,7 +101,7 @@ export function useConferenceData() {
         // Each device/browser chooses its own storage type
         unsubscribeUnits = subscribeToUnitsData((updatedUnits) => {
             if (updatedUnits) {
-                console.log('🔄 Received Firebase update, units count:', updatedUnits.length);
+                // console.log('🔄 Received Firebase update, units count:', updatedUnits.length);
                 setUnits(updatedUnits);
             }
         });

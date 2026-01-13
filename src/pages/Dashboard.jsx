@@ -59,18 +59,20 @@ export default function Dashboard() {
     const avgScore = units.length > 0 ? (totalScore / units.length).toFixed(1) : 0;
 
     return (
-        <div className="flex flex-col lg:flex-row h-screen w-full bg-[#0d1626] text-white overflow-y-auto lg:overflow-hidden p-3 pt-24 lg:p-6 lg:pt-32 gap-3 lg:gap-6 font-['Heebo'] relative selection:bg-cyan-500/30 select-none cursor-default" dir="rtl">
+        <div className="flex flex-col lg:flex-row h-screen w-full bg-gradient-to-br from-[#0a0e1a] via-[#0d1626] to-[#0a1320] text-white overflow-y-auto lg:overflow-hidden p-3 pt-24 lg:p-6 lg:pt-32 gap-3 lg:gap-6 font-['Heebo'] relative selection:bg-cyan-500/30 select-none cursor-default" dir="rtl">
 
-            {/* Background Ambient Glow */}
-            <div className="absolute top-[-20%] right-[10%] w-[500px] h-[500px] bg-cyan-900/20 rounded-full blur-[120px] pointer-events-none" />
-            <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-blue-900/10 rounded-full blur-[150px] pointer-events-none" />
+            {/* Enhanced Background Ambient Glow */}
+            <div className="absolute top-[-20%] right-[10%] w-[700px] h-[700px] bg-cyan-400/20 rounded-full blur-[180px] pointer-events-none animate-pulse" />
+            <div className="absolute bottom-[-10%] left-[-10%] w-[800px] h-[800px] bg-blue-400/15 rounded-full blur-[200px] pointer-events-none" />
+            <div className="absolute top-[30%] left-[30%] w-[600px] h-[600px] bg-sky-300/10 rounded-full blur-[160px] pointer-events-none" />
+            <div className="absolute bottom-[20%] right-[20%] w-[500px] h-[500px] bg-indigo-400/12 rounded-full blur-[140px] pointer-events-none animate-pulse" />
 
             {/* Header Title with Clock */}
             <div className="absolute top-6 lg:top-10 left-0 w-full flex items-center px-4 lg:px-8 z-40">
                 <div className="flex-shrink-0">
                     <DigitalClock currentTime={currentTime} />
                 </div>
-                <h1 className="absolute left-1/2 -translate-x-1/2 text-2xl lg:text-5xl font-black text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] tracking-wider whitespace-nowrap">
+                <h1 className="absolute left-1/2 -translate-x-1/2 text-2xl lg:text-5xl font-black text-white drop-shadow-[0_0_30px_rgba(6,182,212,0.6)] tracking-wider whitespace-nowrap">
                     כנס הדרכה ז"י | 2026
                 </h1>
             </div>
@@ -110,12 +112,16 @@ export default function Dashboard() {
             <aside className="w-full lg:w-72 flex flex-col gap-3 lg:gap-4 shrink-0 z-20 order-1 lg:order-none">
 
                 {/* Top: Stats (75%) */}
-                <div className="flex-[3] grid grid-cols-2 lg:flex lg:flex-col gap-3 lg:gap-6 bg-slate-800/40 rounded-2xl lg:rounded-3xl p-4 lg:p-8 border border-white/10 backdrop-blur-xl shadow-2xl">
-                    <div className="text-center mb-2 col-span-2">
-                        <h2 className="text-xl lg:text-3xl font-black text-white drop-shadow-md">
+                <div className="flex-[3] grid grid-cols-2 lg:flex lg:flex-col gap-3 lg:gap-6 bg-slate-800/40 rounded-2xl lg:rounded-3xl p-4 lg:p-8 border border-cyan-400/20 backdrop-blur-xl shadow-[0_0_60px_rgba(6,182,212,0.3)] relative overflow-hidden">
+                    {/* Inner glow effect */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5 rounded-3xl pointer-events-none" />
+                    <div className="absolute -inset-1 bg-gradient-to-r from-cyan-400/0 via-cyan-400/20 to-cyan-400/0 rounded-3xl blur-2xl opacity-50 pointer-events-none" />
+
+                    <div className="text-center mb-2 col-span-2 relative z-10">
+                        <h2 className="text-xl lg:text-3xl font-black text-white drop-shadow-[0_0_20px_rgba(6,182,212,0.8)]">
                             לוח תוצאות
                         </h2>
-                        <div className="w-12 h-1 bg-cyan-500 mx-auto mt-2 lg:mt-4 rounded-full shadow-[0_0_10px_rgba(6,182,212,0.5)]" />
+                        <div className="w-12 h-1 bg-cyan-400 mx-auto mt-2 lg:mt-4 rounded-full shadow-[0_0_20px_rgba(6,182,212,0.8)]" />
                     </div>
 
                     <StatCard icon={Users} label="סה״כ יחידות" value={units.length} color="from-blue-400 to-blue-600" />
@@ -125,12 +131,13 @@ export default function Dashboard() {
                 </div>
 
                 {/* Bottom: Banner Image */}
-                <div className="flex-[1] flex items-center justify-center bg-slate-900/60 rounded-2xl lg:rounded-3xl p-2 lg:p-4 border border-white/5 backdrop-blur-xl relative overflow-hidden group shadow-lg">
-                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="flex-[1] flex items-center justify-center bg-slate-900/60 rounded-2xl lg:rounded-3xl p-2 lg:p-4 border border-cyan-400/20 backdrop-blur-xl relative overflow-hidden group shadow-[0_0_40px_rgba(6,182,212,0.2)]">
+                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute -inset-1 bg-gradient-to-r from-cyan-400/20 via-blue-400/20 to-purple-400/20 rounded-3xl blur-xl opacity-30 group-hover:opacity-60 transition-opacity" />
                     <img
                         src="/logos/al_log_ban.png"
                         alt="Alpha Banner"
-                        className="w-full h-full object-contain relative z-10 drop-shadow-xl scale-110"
+                        className="w-full h-full object-contain relative z-10 drop-shadow-[0_0_30px_rgba(6,182,212,0.4)] scale-110 group-hover:drop-shadow-[0_0_50px_rgba(6,182,212,0.6)] transition-all"
                     />
                 </div>
             </aside>
@@ -139,11 +146,11 @@ export default function Dashboard() {
             <div className="flex-1 flex flex-col lg:flex-row gap-3 lg:gap-6 z-20 order-2 lg:order-none">
 
                 {/* Center-Right: Podium (Top 3) */}
-                <section className="flex-[1.5] flex flex-col bg-slate-800/20 rounded-2xl lg:rounded-3xl p-4 lg:p-8 border border-white/5 backdrop-blur-md relative shadow-2xl">
+                <section className="flex-[1.5] flex flex-col bg-slate-800/20 rounded-2xl lg:rounded-3xl p-4 lg:p-8 border border-cyan-400/10 backdrop-blur-md relative shadow-xl">
                     <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent rounded-3xl pointer-events-none" />
 
-                    <h2 className="text-lg lg:text-2xl font-bold mb-4 lg:mb-8 text-center text-white/90 flex items-center justify-center gap-2 lg:gap-3">
-                        <div className="p-1.5 lg:p-2 bg-yellow-500/20 rounded-lg text-yellow-500"><Trophy className="w-4 h-4 lg:w-6 lg:h-6" /></div>
+                    <h2 className="text-lg lg:text-2xl font-bold mb-4 lg:mb-8 text-center text-white/90 flex items-center justify-center gap-2 lg:gap-3 relative z-10">
+                        <div className="p-1.5 lg:p-2 bg-yellow-500/20 rounded-lg text-yellow-400"><Trophy className="w-4 h-4 lg:w-6 lg:h-6" /></div>
                         המובילים
                     </h2>
 
@@ -162,10 +169,13 @@ export default function Dashboard() {
                 </section>
 
                 {/* Left: Carousel (Rank 4-40) */}
-                <section className="flex-[3] flex flex-col bg-slate-800/20 rounded-2xl lg:rounded-3xl p-4 lg:p-8 border border-white/5 backdrop-blur-md overflow-hidden relative shadow-2xl">
+                <section className="flex-[3] flex flex-col bg-slate-800/20 rounded-2xl lg:rounded-3xl p-4 lg:p-8 border border-cyan-400/20 backdrop-blur-md overflow-hidden relative shadow-[0_0_60px_rgba(6,182,212,0.25)]">
+                    {/* Inner glow effects */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/8 via-blue-400/5 to-sky-400/8 rounded-3xl pointer-events-none" />
+                    <div className="absolute -inset-1 bg-gradient-to-r from-cyan-400/15 via-blue-400/15 to-purple-400/15 rounded-3xl blur-2xl opacity-40 pointer-events-none" />
                     <div className="flex justify-between items-center mb-3 lg:mb-6 px-1 lg:px-2">
-                        <h2 className="text-lg lg:text-2xl font-bold text-cyan-400 drop-shadow-sm">דירוג כללי</h2>
-                        <div className="text-xs lg:text-sm font-bold text-slate-300 bg-slate-900/60 px-2 lg:px-4 py-1 lg:py-1.5 rounded-full border border-white/10">
+                        <h2 className="text-lg lg:text-2xl font-bold text-cyan-400 drop-shadow-[0_0_15px_rgba(6,182,212,0.6)] relative z-10">דירוג כללי</h2>
+                        <div className="text-xs lg:text-sm font-bold text-cyan-300 bg-slate-900/60 px-2 lg:px-4 py-1 lg:py-1.5 rounded-full border border-cyan-400/30 shadow-[0_0_20px_rgba(6,182,212,0.3)] relative z-10">
                             עמוד {page + 1} / {totalPages}
                         </div>
                     </div>
@@ -245,12 +255,12 @@ function DigitalClock({ currentTime }) {
         <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-slate-900/80 backdrop-blur-xl rounded-xl lg:rounded-2xl px-4 lg:px-6 py-2 lg:py-3 border border-cyan-500/30 shadow-2xl relative overflow-hidden"
+            className="bg-slate-900/80 backdrop-blur-xl rounded-xl lg:rounded-2xl px-4 lg:px-6 py-2 lg:py-3 border border-cyan-400/40 shadow-[0_0_50px_rgba(6,182,212,0.4)] relative overflow-hidden"
             dir="ltr"
         >
-            {/* Glow effect */}
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 pointer-events-none" />
-            <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-purple-500/20 rounded-2xl blur-xl opacity-50 pointer-events-none" />
+            {/* Enhanced Glow effect */}
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/15 to-blue-400/15 pointer-events-none" />
+            <div className="absolute -inset-1 bg-gradient-to-r from-cyan-400/30 via-blue-400/30 to-sky-400/30 rounded-2xl blur-xl opacity-60 pointer-events-none animate-pulse" />
 
             <div className="relative z-10 flex items-center gap-2 lg:gap-3">
                 {/* Time Display - LTR */}
@@ -320,12 +330,13 @@ function DigitalClock({ currentTime }) {
 
 function StatCard({ icon: Icon, label, value, color }) {
     return (
-        <div className="bg-slate-900/40 p-2 lg:p-4 rounded-xl lg:rounded-2xl border border-white/5 flex items-center gap-3 lg:gap-5 hover:bg-slate-900/60 transition-colors group">
-            <div className={clsx("p-2 lg:p-3.5 rounded-lg lg:rounded-xl bg-gradient-to-br shadow-lg group-hover:scale-110 transition-transform", color)}>
+        <div className="bg-slate-900/40 p-2 lg:p-4 rounded-xl lg:rounded-2xl border border-cyan-400/10 flex items-center gap-3 lg:gap-5 hover:bg-slate-900/60 hover:border-cyan-400/30 hover:shadow-[0_0_30px_rgba(6,182,212,0.3)] transition-all group relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/0 via-cyan-400/5 to-blue-400/0 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className={clsx("p-2 lg:p-3.5 rounded-lg lg:rounded-xl bg-gradient-to-br shadow-lg group-hover:scale-110 group-hover:shadow-[0_0_25px_rgba(6,182,212,0.5)] transition-all relative z-10", color)}>
                 <Icon size={18} className="lg:w-[26px] lg:h-[26px] text-white drop-shadow-md" />
             </div>
-            <div>
-                <div className="text-xl lg:text-3xl font-black font-mono text-white tracking-tight drop-shadow-sm">{value}</div>
+            <div className="relative z-10">
+                <div className="text-xl lg:text-3xl font-black font-mono text-white tracking-tight drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">{value}</div>
                 <div className="text-xs lg:text-sm font-medium text-slate-400">{label}</div>
             </div>
         </div>
@@ -373,16 +384,17 @@ function PodiumBar({ unit, rank, color, height, delay }) {
             </div>
 
             <motion.div
-                className={clsx("w-full rounded-t-2xl relative group shadow-2xl border-x border-t border-white/20", `bg-gradient-to-b ${color}`)}
+                className={clsx("w-full rounded-t-2xl relative group shadow-[0_0_40px_rgba(6,182,212,0.4)] border-x border-t border-cyan-400/30", `bg-gradient-to-b ${color}`)}
                 initial={{ height: 0 }}
                 animate={{ height }}
                 transition={{ type: "spring", stiffness: 50, damping: 15 }}
             >
-                <div className="absolute top-2 lg:top-4 w-full text-center font-black text-white text-3xl lg:text-5xl drop-shadow-md opacity-40 mix-blend-overlay">
+                <div className="absolute top-2 lg:top-4 w-full text-center font-black text-white text-3xl lg:text-5xl drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] opacity-40 mix-blend-overlay">
                     {rank}
                 </div>
-                {/* Glow effect */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-2xl" />
+                {/* Enhanced Glow effect */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-white/30 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-2xl" />
+                <div className="absolute -inset-1 bg-gradient-to-t from-cyan-400/20 via-blue-400/20 to-transparent rounded-t-2xl blur-xl opacity-50" />
             </motion.div>
 
             <div className="mt-1 lg:mt-3 font-bold text-slate-400 text-xs lg:text-sm tracking-widest">מקום {rank}</div>
@@ -396,7 +408,7 @@ function RankRow({ unit, maxScore }) {
     return (
         <motion.div
             layoutId={`row-${unit.id}`}
-            className="flex items-center gap-2 lg:gap-4 p-2 lg:p-3 bg-slate-900/30 rounded-xl border border-white/5 hover:bg-slate-900/50 transition-colors group relative overflow-hidden"
+            className="flex items-center gap-2 lg:gap-4 p-2 lg:p-3 bg-slate-900/30 rounded-xl border border-cyan-400/10 hover:bg-slate-900/50 hover:border-cyan-400/30 hover:shadow-[0_0_25px_rgba(6,182,212,0.25)] transition-all group relative overflow-hidden"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
@@ -415,7 +427,7 @@ function RankRow({ unit, maxScore }) {
             <div className="flex-1 h-2.5 lg:h-3.5 bg-black/40 rounded-full overflow-hidden relative shadow-inner cursor-default">
                 <motion.div
                     layout
-                    className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full shadow-[0_0_10px_rgba(6,182,212,0.5)] relative"
+                    className="h-full bg-gradient-to-r from-cyan-400 to-blue-400 rounded-full shadow-[0_0_20px_rgba(6,182,212,0.7)] relative group-hover:shadow-[0_0_30px_rgba(6,182,212,0.9)]"
                     initial={{ width: 0 }}
                     animate={{ width: barWidth }}
                     transition={{ type: "spring", stiffness: 50, damping: 15 }}
