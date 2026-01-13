@@ -1,17 +1,15 @@
 import { useState, useEffect } from 'react';
+import {
+    saveUnitsData,
+    loadUnitsData,
+    subscribeToUnitsData
+} from '../services/firebaseService';
+import { isFirebaseConfigured } from '../services/firebase';
 
 const STORAGE_KEY = 'conference_units_data';
 const CONFIG_KEY = 'conference_config';
 
-const getInitialData = () => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-        try {
-            return JSON.parse(stored);
-        } catch (e) {
-            console.error("Failed to parse storage", e);
-        }
-    }
+const getDefaultData = () => {
     // Initialize default 40 units
     return Array.from({ length: 40 }, (_, i) => ({
         id: i + 1,
@@ -21,17 +19,103 @@ const getInitialData = () => {
     }));
 };
 
+const getInitialData = async (storageType = 'localStorage') => {
+    if (storageType === 'localStorage') {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+            try {
+                return JSON.parse(stored);
+            } catch (e) {
+                console.error("Failed to parse storage", e);
+            }
+        }
+    } else if (storageType === 'firebase') {
+        try {
+            const firebaseData = await loadUnitsData();
+            if (firebaseData) {
+                console.log('✅ Loaded data from Firebase');
+                return firebaseData;
+            }
+        } catch (error) {
+            console.error('Error loading from Firebase:', error);
+        }
+    }
+
+    return getDefaultData();
+};
+
 const getInitialConfig = () => {
     const stored = localStorage.getItem(CONFIG_KEY);
-    return stored ? JSON.parse(stored) : { pageSize: 10, maxScore: 10, showZero: false }; // Default maxScore 10, showZero true
+    return stored ? JSON.parse(stored) : { pageSize: 10, maxScore: 10, showZero: false, storageType: 'localStorage' };
 };
 
 export function useConferenceData() {
-    const [units, setUnits] = useState(getInitialData);
     const [config, setConfig] = useState(getInitialConfig);
 
-    // Sync state when localStorage changes in another tab
+    // Auto-detect: Use Firebase if configured, otherwise use config setting
+    const storageType = isFirebaseConfigured() ? 'firebase' : (config.storageType || 'localStorage');
+    console.log('📊 Storage mode:', storageType, '| Firebase configured:', isFirebaseConfigured());
+
+    const [units, setUnits] = useState(getDefaultData); // Start with default, will load async
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Load initial data when storage type changes
     useEffect(() => {
+        let isMounted = true;
+
+        const loadData = async () => {
+            setIsLoading(true);
+            try {
+                const data = await getInitialData(storageType);
+                if (isMounted) {
+                    setUnits(data);
+                }
+            } catch (error) {
+                console.error('Error loading initial data:', error);
+                if (isMounted) {
+                    setUnits(getDefaultData());
+                }
+            } finally {
+                if (isMounted) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        loadData();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [storageType]);
+
+    // Real-time sync for Firebase
+    useEffect(() => {
+        if (storageType !== 'firebase') return;
+
+        console.log('🔥 Firebase real-time listener activated');
+        let unsubscribeUnits = null;
+
+        // Subscribe to units changes only
+        // Note: Config is NOT synced via Firebase to avoid conflicts
+        // Each device/browser chooses its own storage type
+        unsubscribeUnits = subscribeToUnitsData((updatedUnits) => {
+            if (updatedUnits) {
+                console.log('🔄 Received Firebase update, units count:', updatedUnits.length);
+                setUnits(updatedUnits);
+            }
+        });
+
+        // Cleanup subscriptions
+        return () => {
+            if (unsubscribeUnits) unsubscribeUnits();
+        };
+    }, [storageType]);
+
+    // Sync localStorage across tabs (only for localStorage mode)
+    useEffect(() => {
+        if (storageType !== 'localStorage') return;
+
         const handleStorageChange = (e) => {
             if (e.key === STORAGE_KEY && e.newValue) {
                 try {
@@ -47,16 +131,30 @@ export function useConferenceData() {
 
         window.addEventListener('storage', handleStorageChange);
         return () => window.removeEventListener('storage', handleStorageChange);
-    }, []);
+    }, [storageType]);
 
-    const saveUnits = (newData) => {
+    const saveUnits = async (newData) => {
         setUnits(newData);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+
+        if (storageType === 'localStorage') {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+        } else if (storageType === 'firebase') {
+            try {
+                await saveUnitsData(newData);
+            } catch (error) {
+                console.error('Firebase save error:', error);
+                // Fallback to localStorage on error
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+            }
+        }
     };
 
-    const saveConfig = (newConfig) => {
+    const saveConfigData = (newConfig) => {
         setConfig(newConfig);
+        // Config is always saved to localStorage only
+        // This prevents conflicts when switching storage modes
         localStorage.setItem(CONFIG_KEY, JSON.stringify(newConfig));
+
     };
 
     // Actions
@@ -65,8 +163,6 @@ export function useConferenceData() {
         const newUnits = units.map(u => {
             if (u.id === id) {
                 const newScore = u.score + increment;
-                if (newScore < 0 || newScore > maxScore && increment > 0) return u; // Allow decrement even if above max (rare edge case), but strictly prevent checking limits on increment
-                // Actually, let's keep it simple: strict bounds.
                 const clamped = Math.max(0, Math.min(newScore, maxScore));
                 return { ...u, score: clamped };
             }
@@ -98,11 +194,10 @@ export function useConferenceData() {
     };
 
     const updateConfig = (updates) => {
-        saveConfig({ ...config, ...updates });
+        saveConfigData({ ...config, ...updates });
     };
 
     const resetData = () => {
-        // איפוס רק הניקודים, שמירה על שמות ותמונות
         const resetUnits = units.map(unit => ({
             ...unit,
             score: 0
@@ -118,6 +213,7 @@ export function useConferenceData() {
         addUnit,
         removeUnit,
         updateConfig,
-        resetData
+        resetData,
+        isLoading
     };
 }

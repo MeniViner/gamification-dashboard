@@ -233,14 +233,14 @@ function DigitalClock({ currentTime }) {
     const hours = String(currentTime.getHours()).padStart(2, '0');
     const minutes = String(currentTime.getMinutes()).padStart(2, '0');
     const seconds = String(currentTime.getSeconds()).padStart(2, '0');
-    
-    const day = currentTime.getDate();
-    const month = currentTime.getMonth() + 1;
+
+    const day = String(currentTime.getDate()).padStart(2, '0');
+    const month = String(currentTime.getMonth() + 1).padStart(2, '0');
     const year = currentTime.getFullYear();
-    
+
     const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
     const dayName = days[currentTime.getDay()];
-    
+
     return (
         <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -251,44 +251,62 @@ function DigitalClock({ currentTime }) {
             {/* Glow effect */}
             <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 pointer-events-none" />
             <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-purple-500/20 rounded-2xl blur-xl opacity-50 pointer-events-none" />
-            
+
             <div className="relative z-10 flex items-center gap-2 lg:gap-3">
                 {/* Time Display - LTR */}
                 <div className="flex items-center gap-1 lg:gap-1.5">
-                    <motion.span
-                        key={hours}
-                        initial={{ scale: 1.2, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ duration: 0.3 }}
-                        className="text-xl lg:text-3xl font-black font-mono text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.8)]"
-                    >
-                        {hours}
-                    </motion.span>
+                    <div className="relative inline-block">
+                        <AnimatePresence mode="wait">
+                            <motion.span
+                                key={hours}
+                                initial={{ scale: 1.2, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.8, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="text-xl lg:text-3xl font-black font-mono text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.8)] absolute inset-0"
+                            >
+                                {hours}
+                            </motion.span>
+                        </AnimatePresence>
+                        <span className="text-xl lg:text-3xl font-black font-mono opacity-0">{hours}</span>
+                    </div>
                     <span className="text-xl lg:text-3xl font-black text-cyan-500/50 animate-pulse">:</span>
-                    <motion.span
-                        key={minutes}
-                        initial={{ scale: 1.2, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ duration: 0.3 }}
-                        className="text-xl lg:text-3xl font-black font-mono text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.8)]"
-                    >
-                        {minutes}
-                    </motion.span>
+                    <div className="relative inline-block">
+                        <AnimatePresence mode="wait">
+                            <motion.span
+                                key={minutes}
+                                initial={{ scale: 1.2, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.8, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="text-xl lg:text-3xl font-black font-mono text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.8)] absolute inset-0"
+                            >
+                                {minutes}
+                            </motion.span>
+                        </AnimatePresence>
+                        <span className="text-xl lg:text-3xl font-black font-mono opacity-0">{minutes}</span>
+                    </div>
                     <span className="text-lg lg:text-2xl font-black text-cyan-500/50 animate-pulse">:</span>
-                    <motion.span
-                        key={seconds}
-                        initial={{ scale: 1.2, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ duration: 0.3 }}
-                        className="text-lg lg:text-2xl font-black font-mono text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]"
-                    >
-                        {seconds}
-                    </motion.span>
+                    <div className="relative inline-block">
+                        <AnimatePresence mode="wait">
+                            <motion.span
+                                key={seconds}
+                                initial={{ scale: 1.2, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.8, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="text-lg lg:text-2xl font-black font-mono text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.6)] absolute inset-0"
+                            >
+                                {seconds}
+                            </motion.span>
+                        </AnimatePresence>
+                        <span className="text-lg lg:text-2xl font-black font-mono opacity-0">{seconds}</span>
+                    </div>
                 </div>
-                
+
                 {/* Separator */}
                 <div className="w-px h-6 lg:h-8 bg-cyan-500/30" />
-                
+
                 {/* Date Display */}
                 <div className="flex items-center gap-1.5 lg:gap-2">
                     <div className="text-xs lg:text-xl mt-1 font-bold text-slate-300 whitespace-nowrap">

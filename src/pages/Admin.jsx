@@ -206,6 +206,36 @@ export default function Admin() {
 
                             <div className="h-10 w-px bg-white/10" />
 
+                            <div className="flex flex-col gap-2">
+                                <label className="text-sm font-bold text-slate-400">סוג אחסון נתונים</label>
+                                <div className="flex items-center gap-2 bg-slate-950 p-1 rounded-lg border border-white/5 w-fit">
+                                    <button
+                                        onClick={() => updateConfig({ storageType: 'localStorage' })}
+                                        className={clsx(
+                                            "px-4 py-2 rounded-lg text-sm font-bold transition-all",
+                                            config.storageType === 'localStorage' || !config.storageType
+                                                ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/50"
+                                                : "bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-white border border-transparent"
+                                        )}
+                                    >
+                                        LocalStorage
+                                    </button>
+                                    <button
+                                        onClick={() => updateConfig({ storageType: 'firebase' })}
+                                        className={clsx(
+                                            "px-4 py-2 rounded-lg text-sm font-bold transition-all",
+                                            config.storageType === 'firebase'
+                                                ? "bg-orange-500/20 text-orange-400 border border-orange-500/50"
+                                                : "bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-white border border-transparent"
+                                        )}
+                                    >
+                                        Firebase
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="h-10 w-px bg-white/10" />
+
                             <button
                                 onClick={() => setSearchTerm("")}
                                 disabled={!searchTerm}
