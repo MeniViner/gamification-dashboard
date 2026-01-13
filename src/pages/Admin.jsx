@@ -241,6 +241,7 @@ export default function Admin() {
                                     handleLogoUpload={handleLogoUpload}
                                     handleSaveEdit={handleSaveEdit}
                                     handleEditClick={handleEditClick}
+                                    handleRemoveClick={handleRemoveClick}
                                     updateScore={updateScore}
                                     removeUnit={removeUnit}
                                     setEditingId={setEditingId}
@@ -346,7 +347,7 @@ function ConfirmModal({ type, unitName, onConfirm, onCancel }) {
     );
 }
 
-function AdminUnitCard({ unit, editingId, editForm, setEditForm, handleLogoUpload, handleSaveEdit, handleEditClick, updateScore, removeUnit, setEditingId, maxScore }) {
+function AdminUnitCard({ unit, editingId, editForm, setEditForm, handleLogoUpload, handleSaveEdit, handleEditClick, handleRemoveClick, updateScore, removeUnit, setEditingId, maxScore }) {
     const isEditing = editingId === unit.id;
 
     return (

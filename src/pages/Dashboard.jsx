@@ -58,7 +58,7 @@ export default function Dashboard() {
 
             {/* Header Title */}
             <h1 className="absolute top-6 lg:top-10 left-0 w-full text-center text-2xl lg:text-5xl font-black text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] z-40 tracking-wider">
-                כנס מדריכים ז"י | 2026
+                כנס הדרכה ז"י | 2026
             </h1>
 
             {/* Absolute Header - Top Left Logos */}
