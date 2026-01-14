@@ -255,7 +255,7 @@ function DigitalClock({ currentTime }) {
         <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-slate-900/80 backdrop-blur-xl rounded-xl lg:rounded-2xl px-4 lg:px-6 py-2 lg:py-3 border border-cyan-400/40 shadow-[0_0_50px_rgba(6,182,212,0.4)] relative overflow-hidden"
+            className="bg-slate-900/80 backdrop-blur-xl rounded-xl lg:rounded-2xl px-4  py-2 lg:py-3 border border-cyan-400/40 shadow-[0_0_50px_rgba(6,182,212,0.4)] relative overflow-hidden"
             dir="ltr"
         >
             {/* Enhanced Glow effect */}

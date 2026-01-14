@@ -138,12 +138,21 @@ export function useConferenceData() {
 
         if (storageType === 'localStorage') {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+            console.log('✅ Data saved to localStorage successfully');
         } else if (storageType === 'firebase') {
             try {
-                await saveUnitsData(newData);
+                const success = await saveUnitsData(newData);
+
+                if (success) {
+                    console.log('✅ Data saved to Firebase successfully');
+                } else {
+                    // Firebase failed, fallback to localStorage
+                    console.warn('⚠️ Firebase save failed, using localStorage as fallback');
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+                }
             } catch (error) {
-                console.error('Firebase save error:', error);
-                // Fallback to localStorage on error
+                console.error('❌ Firebase save error:', error);
+                // Always fallback to localStorage on error
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
             }
         }
@@ -160,6 +169,7 @@ export function useConferenceData() {
     // Actions
     const updateScore = (id, increment) => {
         const maxScore = config.maxScore || 10;
+        const unit = units.find(u => u.id === id);
         const newUnits = units.map(u => {
             if (u.id === id) {
                 const newScore = u.score + increment;
@@ -168,13 +178,17 @@ export function useConferenceData() {
             }
             return u;
         });
+        const updatedUnit = newUnits.find(u => u.id === id);
+        console.log(`✅ Score updated: ${unit?.name} (${unit?.score} → ${updatedUnit?.score})`);
         saveUnits(newUnits);
     };
 
     const updateUnit = (id, updates) => {
+        const unit = units.find(u => u.id === id);
         const newUnits = units.map(u =>
             u.id === id ? { ...u, ...updates } : u
         );
+        console.log(`✅ Unit updated: ${unit?.name} → ${updates.name || unit?.name}`, updates);
         saveUnits(newUnits);
     };
 
@@ -186,14 +200,18 @@ export function useConferenceData() {
             score: 0,
             logo: null
         };
+        console.log(`✅ Unit added: ${name} (ID: ${newUnit.id})`);
         saveUnits([...units, newUnit]);
     };
 
     const removeUnit = (id) => {
+        const unit = units.find(u => u.id === id);
+        console.log(`✅ Unit removed: ${unit?.name} (ID: ${id})`);
         saveUnits(units.filter(u => u.id !== id));
     };
 
     const updateConfig = (updates) => {
+        console.log('✅ Config updated:', updates);
         saveConfigData({ ...config, ...updates });
     };
 
@@ -202,7 +220,23 @@ export function useConferenceData() {
             ...unit,
             score: 0
         }));
+        console.log(`✅ All scores reset to 0 (${units.length} units)`);
         saveUnits(resetUnits);
+    };
+
+    const refreshData = async () => {
+        setIsLoading(true);
+        try {
+            const data = await getInitialData(storageType);
+            setUnits(data);
+            console.log('✅ Data refreshed successfully');
+            return true;
+        } catch (error) {
+            console.error('❌ Error refreshing data:', error);
+            return false;
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return {
@@ -214,6 +248,7 @@ export function useConferenceData() {
         removeUnit,
         updateConfig,
         resetData,
+        refreshData,
         isLoading
     };
 }

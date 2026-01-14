@@ -1,17 +1,21 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useConferenceData } from '../hooks/useConferenceData';
-import { Search, Plus, Minus, Settings, Trash2, Pen, Save, X, Upload, AlertTriangle, Lock, ArrowUpDown, SortAsc } from 'lucide-react';
+import { Search, Plus, Minus, Settings, Trash2, Pen, Save, X, Upload, AlertTriangle, Lock, ArrowUpDown, SortAsc, RefreshCw } from 'lucide-react';
 import clsx from 'clsx';
 
 const ADMIN_PASSWORD = "מני2026המתכנת";
+const AUTH_STORAGE_KEY = "admin_authenticated";
 
 export default function Admin() {
-    const { units, config, updateScore, updateUnit, addUnit, removeUnit, updateConfig, resetData } = useConferenceData();
+    const { units, config, updateScore, updateUnit, addUnit, removeUnit, updateConfig, resetData, refreshData, isLoading } = useConferenceData();
 
-    // Authentication State
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    // Authentication State - Check localStorage on mount
+    const [isAuthenticated, setIsAuthenticated] = useState(() => {
+        return localStorage.getItem(AUTH_STORAGE_KEY) === "true";
+    });
     const [passwordInput, setPasswordInput] = useState("");
     const [passwordError, setPasswordError] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     // Local UI State
     const [searchTerm, setSearchTerm] = useState("");
@@ -27,6 +31,7 @@ export default function Admin() {
         e.preventDefault();
         if (passwordInput === ADMIN_PASSWORD) {
             setIsAuthenticated(true);
+            localStorage.setItem(AUTH_STORAGE_KEY, "true");
             setPasswordError(false);
         } else {
             setPasswordError(true);
@@ -98,6 +103,12 @@ export default function Admin() {
 
     const handleModalCancel = () => {
         setModalState({ show: false, type: null, unitId: null, unitName: null });
+    };
+
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        await refreshData();
+        setTimeout(() => setIsRefreshing(false), 500);
     };
 
     // If not authenticated, show login screen
@@ -192,6 +203,20 @@ export default function Admin() {
                                 )}
                             >
                                 <Settings size={16} className="sm:w-5 sm:h-5" />
+                            </button>
+
+                            <button
+                                onClick={handleRefresh}
+                                disabled={isRefreshing}
+                                title="רענן נתונים"
+                                className={clsx(
+                                    "p-2 sm:p-2.5 rounded-xl transition-all border border-white/10",
+                                    isRefreshing
+                                        ? "bg-cyan-500/20 text-cyan-400 border-cyan-500/30 cursor-wait"
+                                        : "bg-slate-800/50 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/30"
+                                )}
+                            >
+                                <RefreshCw size={16} className={clsx("sm:w-5 sm:h-5", isRefreshing && "animate-spin")} />
                             </button>
 
                             <button

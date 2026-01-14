@@ -6,16 +6,49 @@ const COLLECTION_NAME = 'conference_data';
 const UNITS_DOC = 'units';
 const CONFIG_DOC = 'config';
 
+// Debounce timer for writes
+let writeDebounceTimer = null;
+let pendingUnitsData = null;
+
 /**
- * Save units data to Firestore
+ * Save units data to Firestore with debouncing
  * @param {Array} unitsData - Array of unit objects
+ * @param {boolean} immediate - Skip debouncing and save immediately
  * @returns {Promise<boolean>} - Success status
  */
-export async function saveUnitsData(unitsData) {
+export async function saveUnitsData(unitsData, immediate = false) {
     if (!isFirebaseConfigured() || !db) {
         console.warn('Firebase not configured, skipping save to Firestore');
         return false;
     }
+
+    // Store the latest data
+    pendingUnitsData = unitsData;
+
+    // Clear existing timer
+    if (writeDebounceTimer) {
+        clearTimeout(writeDebounceTimer);
+    }
+
+    // If immediate save requested, skip debouncing
+    if (immediate) {
+        return await performSave(unitsData);
+    }
+
+    // Debounce: wait 500ms before saving
+    return new Promise((resolve) => {
+        writeDebounceTimer = setTimeout(async () => {
+            const result = await performSave(pendingUnitsData);
+            resolve(result);
+        }, 500);
+    });
+}
+
+/**
+ * Internal function to perform the actual save
+ */
+async function performSave(unitsData, retryCount = 0) {
+    const MAX_RETRIES = 3;
 
     try {
         const docRef = doc(db, COLLECTION_NAME, UNITS_DOC);
@@ -26,7 +59,18 @@ export async function saveUnitsData(unitsData) {
         // console.log('✅ Units data saved to Firebase');
         return true;
     } catch (error) {
-        console.error('❌ Error saving units to Firebase:', error);
+        // Check if it's a network or rate limit error
+        if ((error.code === 'resource-exhausted' || error.code === 'unavailable') && retryCount < MAX_RETRIES) {
+            console.warn(`⚠️ Firebase write failed (${error.code}), retrying... (${retryCount + 1}/${MAX_RETRIES})`);
+
+            // Exponential backoff: wait longer before each retry
+            const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+            await new Promise(resolve => setTimeout(resolve, delay));
+
+            return await performSave(unitsData, retryCount + 1);
+        }
+
+        console.error('❌ Error saving units to Firebase:', error.code || error.message);
         return false;
     }
 }
