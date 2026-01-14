@@ -8,9 +8,10 @@ import clsx from 'clsx';
 const ROTATION_INTERVAL = 10000;
 
 export default function Dashboard() {
-    const { units, config } = useConferenceData();
+    const { units, config, refreshData } = useConferenceData();
     const [page, setPage] = useState(0);
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     const PAGE_SIZE = config?.pageSize || 10;
 
@@ -130,14 +131,29 @@ export default function Dashboard() {
                     <StatCard icon={BarChart3} label="ניקוד כולל" value={totalScore} color="from-emerald-400 to-emerald-600" />
                 </div>
 
-                {/* Bottom: Banner Image */}
-                <div className="flex-[1] flex items-center justify-center bg-slate-900/60 rounded-2xl lg:rounded-3xl p-2 lg:p-4 border border-cyan-400/20 backdrop-blur-xl relative overflow-hidden group shadow-[0_0_40px_rgba(6,182,212,0.2)]">
-                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                {/* Bottom: Secret Refresh Button (Banner Image) */}
+                <div
+                    onClick={async () => {
+                        if (!isRefreshing) {
+                            setIsRefreshing(true);
+                            await refreshData();
+                            setTimeout(() => setIsRefreshing(false), 500);
+                        }
+                    }}
+                    className={clsx(
+                        "flex-[1] flex items-center justify-center bg-slate-900/60 rounded-2xl lg:rounded-3xl p-2 lg:p-4 border border-cyan-400/20 backdrop-blur-xl relative overflow-hidden group shadow-[0_0_40px_rgba(6,182,212,0.2)] cursor-pointer transition-all",
+                        isRefreshing && "opacity-60"
+                    )}
+                >
+                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 to-blue-500/10 opacity-0 group-hover:opacity-100 group-active:opacity-50 transition-opacity" />
                     <div className="absolute -inset-1 bg-gradient-to-r from-cyan-400/20 via-blue-400/20 to-purple-400/20 rounded-3xl blur-xl opacity-30 group-hover:opacity-60 transition-opacity" />
                     <img
                         src="/logos/al_log_ban.png"
                         alt="Alpha Banner"
-                        className="w-full h-full object-contain relative z-10 drop-shadow-[0_0_30px_rgba(6,182,212,0.4)] scale-110 group-hover:drop-shadow-[0_0_50px_rgba(6,182,212,0.6)] transition-all"
+                        className={clsx(
+                            "w-full h-full object-contain relative z-10 drop-shadow-[0_0_30px_rgba(6,182,212,0.4)] scale-110 group-hover:drop-shadow-[0_0_50px_rgba(6,182,212,0.6)] transition-all group-active:scale-105",
+                            isRefreshing && "animate-pulse"
+                        )}
                     />
                 </div>
             </aside>

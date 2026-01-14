@@ -164,12 +164,12 @@ export default function Admin() {
                             />
                         </div>
 
-                        <div className="flex gap-2 items-center">
+                        <div className="flex gap-1.5 sm:gap-2 items-center flex-wrap">
                             {/* Sort Toggle */}
                             <button
                                 onClick={() => setSortMode(prev => prev === "name" ? "score" : "name")}
                                 className={clsx(
-                                    "flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-xl transition-all border text-xs sm:text-sm font-bold whitespace-nowrap",
+                                    "flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl transition-all border text-xs sm:text-sm font-bold whitespace-nowrap",
                                     sortMode === "score"
                                         ? "bg-cyan-500/20 text-cyan-400 border-cyan-500/50"
                                         : "bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-white border-white/10"
@@ -181,16 +181,16 @@ export default function Admin() {
                             </button>
 
                             {/* Add Unit */}
-                            <form onSubmit={handleAddUnit} className="flex gap-2 flex-1 sm:flex-none">
+                            <form onSubmit={handleAddUnit} className="flex gap-1.5 sm:gap-2 flex-1 sm:flex-none">
                                 <input
                                     type="text"
                                     placeholder="הוסף יחידה..."
-                                    className="flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-xl border border-white/10 bg-slate-900/50 focus:bg-slate-900/80 focus:ring-2 focus:ring-emerald-500/50 outline-none sm:w-32 focus:sm:w-48 lg:w-40 focus:lg:w-60 transition-all placeholder:text-slate-500"
+                                    className="flex-1 sm:flex-none px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-base rounded-lg sm:rounded-xl border border-white/10 bg-slate-900/50 focus:bg-slate-900/80 focus:ring-2 focus:ring-emerald-500/50 outline-none sm:w-32 focus:sm:w-48 lg:w-40 focus:lg:w-60 transition-all placeholder:text-slate-500"
                                     value={newUnitName}
                                     onChange={e => setNewUnitName(e.target.value)}
                                 />
-                                <button type="submit" disabled={!newUnitName} className="bg-emerald-500 hover:bg-emerald-600 text-white p-2 sm:p-2.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-emerald-500/20 active:scale-95">
-                                    <Plus size={16} className="sm:w-5 sm:h-5" />
+                                <button type="submit" disabled={!newUnitName} className="bg-emerald-500 hover:bg-emerald-600 text-white p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-emerald-500/20 active:scale-95">
+                                    <Plus size={14} className="sm:w-5 sm:h-5" />
                                 </button>
                             </form>
 
@@ -198,11 +198,11 @@ export default function Admin() {
                             <button
                                 onClick={() => setShowConfig(!showConfig)}
                                 className={clsx(
-                                    "p-2 sm:p-2.5 rounded-xl transition-all border border-white/10",
+                                    "p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl transition-all border border-white/10",
                                     showConfig ? "bg-cyan-500/20 text-cyan-400 border-cyan-500/50" : "bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-white"
                                 )}
                             >
-                                <Settings size={16} className="sm:w-5 sm:h-5" />
+                                <Settings size={14} className="sm:w-5 sm:h-5" />
                             </button>
 
                             <button
@@ -210,21 +210,21 @@ export default function Admin() {
                                 disabled={isRefreshing}
                                 title="רענן נתונים"
                                 className={clsx(
-                                    "p-2 sm:p-2.5 rounded-xl transition-all border border-white/10",
+                                    "p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl transition-all border border-white/10",
                                     isRefreshing
                                         ? "bg-cyan-500/20 text-cyan-400 border-cyan-500/30 cursor-wait"
                                         : "bg-slate-800/50 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/30"
                                 )}
                             >
-                                <RefreshCw size={16} className={clsx("sm:w-5 sm:h-5", isRefreshing && "animate-spin")} />
+                                <RefreshCw size={14} className={clsx("sm:w-5 sm:h-5", isRefreshing && "animate-spin")} />
                             </button>
 
                             <button
                                 onClick={handleResetClick}
                                 title="איפוס נתונים כללי"
-                                className="p-2 sm:p-2.5 rounded-xl transition-all border border-white/10 bg-slate-800/50 text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/30"
+                                className="p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl transition-all border border-white/10 bg-slate-800/50 text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/30"
                             >
-                                <Trash2 size={16} className="sm:w-5 sm:h-5" />
+                                <Trash2 size={14} className="sm:w-5 sm:h-5" />
                             </button>
                         </div>
                     </div>
