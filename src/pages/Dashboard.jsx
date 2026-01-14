@@ -81,18 +81,18 @@ export default function Dashboard() {
             {/* Absolute Header - Top Left Logos */}
             <div className="absolute top-16 left-1/2 -translate-x-1/2 lg:top-5 lg:left-8 lg:translate-x-0 flex gap-2 lg:gap-4 z-50 scale-50 lg:scale-100">
                 {/* Logo 1 - Alpha */}
-                <img
+                {/* <img
                     src="/logos/alpha logo1.png"
                     alt="Alpha Logo"
                     className="h-20 w-40 -ml-8 object-cover drop-shadow-xl hover:scale-105 transition-transform cursor-pointer"
-                />
+                /> */}
 
                 {/* Logo 2 */}
-                <img
+                {/* <img
                     src="/logos/4.png"
                     alt="Partner Logo 2"
                     className="h-20 w-auto mt-1 object-cover drop-shadow-xl hover:scale-105 transition-transform cursor-pointer"
-                />
+                /> */}
 
                 {/* Logo 3 */}
                 <img
@@ -102,11 +102,11 @@ export default function Dashboard() {
                 />
 
                 {/* Logo 4 */}
-                <img
+                {/* <img
                     src="/logos/3.svg"
                     alt="Partner Logo 4"
                     className="h-20 w-auto object-cover drop-shadow-xl hover:scale-105 transition-transform cursor-pointer"
-                />
+                /> */}
             </div>
 
             {/* Right Sidebar: Stats & Credits */}
