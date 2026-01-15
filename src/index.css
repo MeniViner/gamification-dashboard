@@ -12,6 +12,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -22,8 +23,27 @@
     opacity: 0;
     transform: translateY(20px) scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes scroll-text {
+  0% {
+    transform: translateX(0);
+  }
+
+  85% {
+    transform: translateX(calc(100% - var(--container-width)));
+  }
+
+  90% {
+    transform: translateX(calc(100% - var(--container-width)));
+  }
+
+  100% {
+    transform: translateX(0);
   }
 }

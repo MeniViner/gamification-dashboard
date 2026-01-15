@@ -502,6 +502,39 @@ function PodiumBar({ unit, rank, color, height, delay, availableBooths }) {
     );
 }
 
+// Helper component for scrolling text when name is too long
+function ScrollingText({ text, className }) {
+    const textRef = React.useRef(null);
+    const containerRef = React.useRef(null);
+    const [shouldScroll, setShouldScroll] = React.useState(false);
+
+    React.useEffect(() => {
+        if (textRef.current && containerRef.current) {
+            const textWidth = textRef.current.scrollWidth;
+            const containerWidth = containerRef.current.clientWidth;
+            setShouldScroll(textWidth > containerWidth);
+        }
+    }, [text]);
+
+    return (
+        <div
+            ref={containerRef}
+            className={`overflow-hidden ${className}`}
+            style={shouldScroll ? { '--container-width': `${containerRef.current?.clientWidth || 0}px` } : {}}
+        >
+            <div
+                ref={textRef}
+                className={shouldScroll ? 'inline-block whitespace-nowrap' : 'truncate'}
+                style={shouldScroll ? {
+                    animation: 'scroll-text 8s linear infinite',
+                } : {}}
+            >
+                {text}
+            </div>
+        </div>
+    );
+}
+
 function RankRow({ unit, availableBooths }) {
     const totalBooths = availableBooths.length;
     const unitBooths = unit.booths?.length || 0;
@@ -522,9 +555,10 @@ function RankRow({ unit, availableBooths }) {
 
             <UnitLogo unit={unit} className="w-8 h-8 lg:w-10 lg:h-10 shrink-0" />
 
-            <div className="w-20 lg:w-32 font-bold text-slate-200 truncate group-hover:text-white transition-colors text-sm lg:text-lg" title={unit.name}>
-                {unit.name}
-            </div>
+            <ScrollingText
+                text={unit.name}
+                className="w-20 lg:w-32 font-bold text-slate-200 group-hover:text-white transition-colors text-sm lg:text-lg"
+            />
 
             {/* Bar */}
             <div className="flex-1 h-2.5 lg:h-3.5 bg-black/40 rounded-full overflow-hidden relative shadow-inner cursor-default">

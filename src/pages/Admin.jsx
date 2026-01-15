@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useConferenceData } from '../hooks/useConferenceData';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Plus, Trash2, Pen, Save, Upload, X, Settings, RefreshCw, Archive, SortAsc, SortDesc, ChevronDown, Eye, EyeOff, ChevronLeft, Store } from 'lucide-react';
+import { Search, Plus, Trash2, Pen, Save, Upload, X, Settings, RefreshCw, Archive, SortAsc, SortDesc, ChevronDown, Eye, EyeOff, ChevronLeft, Store, AlertTriangle, Lock } from 'lucide-react';
 import clsx from 'clsx';
 
 
