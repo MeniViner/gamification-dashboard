@@ -28,7 +28,7 @@ export default function BoothsManagementPage() {
 
     const handleSaveEdit = () => {
         if (formData.name.trim()) {
-            updateBooth(editingId, formData.name.trim(), formData.color);
+            updateBooth(editingId, { name: formData.name.trim(), color: formData.color });
             setEditingId(null);
             setFormData({ name: '', color: '#FF6B6B' });
         }

@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react';
 import {
     saveUnitsData,
     loadUnitsData,
-    subscribeToUnitsData
+    subscribeToUnitsData,
+    saveConfig,
+    loadConfig,
+    subscribeToConfig
 } from '../services/firebaseService';
 import { isFirebaseConfigured } from '../services/firebase';
 
@@ -118,13 +121,25 @@ export function useConferenceData() {
     const [units, setUnits] = useState(getDefaultData); // Start with default, will load async
     const [isLoading, setIsLoading] = useState(false);
 
-    // Load initial data when storage type changes
+    // Load initial data and config when storage type changes
     useEffect(() => {
         let isMounted = true;
 
         const loadData = async () => {
             setIsLoading(true);
             try {
+                // Load config from Firebase if in Firebase mode
+                if (storageType === 'firebase') {
+                    const firebaseConfig = await loadConfig();
+                    if (firebaseConfig && firebaseConfig.availableBooths && isMounted) {
+                        // Merge Firebase booths with local config (preserve local settings)
+                        setConfig(prev => ({
+                            ...prev,
+                            availableBooths: firebaseConfig.availableBooths
+                        }));
+                    }
+                }
+
                 const data = await getInitialData(storageType, config.availableBooths);
                 if (isMounted) {
                     setUnits(data);
@@ -154,10 +169,9 @@ export function useConferenceData() {
 
         // console.log('🔥 Firebase real-time listener activated');
         let unsubscribeUnits = null;
+        let unsubscribeConfig = null;
 
-        // Subscribe to units changes only
-        // Note: Config is NOT synced via Firebase to avoid conflicts
-        // Each device/browser chooses its own storage type
+        // Subscribe to units changes
         unsubscribeUnits = subscribeToUnitsData((updatedUnits) => {
             if (updatedUnits) {
                 // console.log('🔄 Received Firebase update, units count:', updatedUnits.length);
@@ -165,9 +179,21 @@ export function useConferenceData() {
             }
         });
 
+        // Subscribe to config changes (for booth definitions)
+        unsubscribeConfig = subscribeToConfig((updatedConfig) => {
+            if (updatedConfig && updatedConfig.availableBooths) {
+                // console.log('🔄 Received Firebase config update, booths count:', updatedConfig.availableBooths.length);
+                setConfig(prev => ({
+                    ...prev,
+                    availableBooths: updatedConfig.availableBooths
+                }));
+            }
+        });
+
         // Cleanup subscriptions
         return () => {
             if (unsubscribeUnits) unsubscribeUnits();
+            if (unsubscribeConfig) unsubscribeConfig();
         };
     }, [storageType]);
 
@@ -217,12 +243,25 @@ export function useConferenceData() {
         }
     };
 
-    const saveConfigData = (newConfig) => {
+    const saveConfigData = async (newConfig) => {
         setConfig(newConfig);
-        // Config is always saved to localStorage only
-        // This prevents conflicts when switching storage modes
+
+        // Always save to localStorage as fallback
         localStorage.setItem(CONFIG_KEY, JSON.stringify(newConfig));
 
+        // Also save to Firebase if in Firebase mode
+        if (storageType === 'firebase') {
+            try {
+                const success = await saveConfig(newConfig);
+                if (success) {
+                    console.log('✅ Config saved to Firebase successfully');
+                } else {
+                    console.warn('⚠️ Firebase config save failed, using localStorage fallback');
+                }
+            } catch (error) {
+                console.error('❌ Firebase config save error:', error);
+            }
+        }
     };
 
     // Booth Management Actions
