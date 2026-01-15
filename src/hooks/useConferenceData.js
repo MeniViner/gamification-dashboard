@@ -9,22 +9,62 @@ import { isFirebaseConfigured } from '../services/firebase';
 const STORAGE_KEY = 'conference_units_data';
 const CONFIG_KEY = 'conference_config';
 
+// Default booths with colors (10 booths)
+const getDefaultBooths = () => [
+    { id: 'booth-1', name: 'דוכן 1', color: '#FF6B6B' },
+    { id: 'booth-2', name: 'דוכן 2', color: '#4ECDC4' },
+    { id: 'booth-3', name: 'דוכן 3', color: '#45B7D1' },
+    { id: 'booth-4', name: 'דוכן 4', color: '#FFA07A' },
+    { id: 'booth-5', name: 'דוכן 5', color: '#98D8C8' },
+    { id: 'booth-6', name: 'דוכן 6', color: '#F7DC6F' },
+    { id: 'booth-7', name: 'דוכן 7', color: '#BB8FCE' },
+    { id: 'booth-8', name: 'דוכן 8', color: '#85C1E2' },
+    { id: 'booth-9', name: 'דוכן 9', color: '#F8B739' },
+    { id: 'booth-10', name: 'דוכן 10', color: '#52BE80' }
+];
+
 const getDefaultData = () => {
-    // Initialize default 40 units
+    // Initialize default 40 units with booths array
     return Array.from({ length: 40 }, (_, i) => ({
         id: i + 1,
         name: `Unit ${i + 1}`,
-        score: 0,
+        booths: [], // Changed from score to booths array
         logo: null
     }));
 };
 
-const getInitialData = async (storageType = 'localStorage') => {
+// Migration function - convert old score format to new booths format
+const migrateData = (data, availableBooths) => {
+    return data.map(unit => {
+        // If unit has old 'score' property, migrate it
+        if (typeof unit.score === 'number' && !unit.booths) {
+            const booths = [];
+            // Convert score to booths by adding booths in order
+            for (let i = 0; i < unit.score && i < availableBooths.length; i++) {
+                booths.push(availableBooths[i].id);
+            }
+            return {
+                ...unit,
+                booths,
+                score: undefined // Remove old score property
+            };
+        }
+        // Ensure booths array exists
+        return {
+            ...unit,
+            booths: unit.booths || []
+        };
+    });
+};
+
+const getInitialData = async (storageType = 'localStorage', availableBooths) => {
+    let data = null;
+
     if (storageType === 'localStorage') {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
             try {
-                return JSON.parse(stored);
+                data = JSON.parse(stored);
             } catch (e) {
                 console.error("Failed to parse storage", e);
             }
@@ -33,20 +73,39 @@ const getInitialData = async (storageType = 'localStorage') => {
         try {
             const firebaseData = await loadUnitsData();
             if (firebaseData) {
-                // console.log('✅ Loaded data from Firebase');
-                return firebaseData;
+                data = firebaseData;
             }
         } catch (error) {
             console.error('Error loading from Firebase:', error);
         }
     }
 
-    return getDefaultData();
+    // If no data, return default
+    if (!data) {
+        return getDefaultData();
+    }
+
+    // Migrate data if needed
+    return migrateData(data, availableBooths || getDefaultBooths());
 };
 
 const getInitialConfig = () => {
     const stored = localStorage.getItem(CONFIG_KEY);
-    return stored ? JSON.parse(stored) : { pageSize: 10, maxScore: 10, showZero: false, storageType: 'localStorage' };
+    const defaultConfig = {
+        pageSize: 10,
+        showZero: false,
+        storageType: 'firebase',
+        availableBooths: getDefaultBooths()
+    };
+
+    if (!stored) return defaultConfig;
+
+    const parsed = JSON.parse(stored);
+    // Ensure availableBooths exists
+    if (!parsed.availableBooths) {
+        parsed.availableBooths = getDefaultBooths();
+    }
+    return parsed;
 };
 
 export function useConferenceData() {
@@ -66,7 +125,7 @@ export function useConferenceData() {
         const loadData = async () => {
             setIsLoading(true);
             try {
-                const data = await getInitialData(storageType);
+                const data = await getInitialData(storageType, config.availableBooths);
                 if (isMounted) {
                     setUnits(data);
                 }
@@ -166,21 +225,73 @@ export function useConferenceData() {
 
     };
 
-    // Actions
-    const updateScore = (id, increment) => {
-        const maxScore = config.maxScore || 10;
-        const unit = units.find(u => u.id === id);
+    // Booth Management Actions
+    const addBooth = (name, color) => {
+        const newId = `booth-${Date.now()}`;
+        const newBooth = { id: newId, name, color };
+        const updatedBooths = [...(config.availableBooths || []), newBooth];
+        console.log(`✅ Booth added: ${name} (${color})`);
+        updateConfig({ availableBooths: updatedBooths });
+        return newId;
+    };
+
+    const updateBooth = (id, updates) => {
+        const updatedBooths = (config.availableBooths || []).map(b =>
+            b.id === id ? { ...b, ...updates } : b
+        );
+        console.log(`✅ Booth updated: ${id}`, updates);
+        updateConfig({ availableBooths: updatedBooths });
+    };
+
+    const removeBooth = (id) => {
+        const booth = config.availableBooths?.find(b => b.id === id);
+        const updatedBooths = (config.availableBooths || []).filter(b => b.id !== id);
+
+        // Also remove this booth from all units
+        const newUnits = units.map(unit => ({
+            ...unit,
+            booths: (unit.booths || []).filter(boothId => boothId !== id)
+        }));
+
+        console.log(`✅ Booth removed: ${booth?.name} (removed from all units)`);
+        updateConfig({ availableBooths: updatedBooths });
+        saveUnits(newUnits);
+    };
+
+    const addBoothToUnit = (unitId, boothId) => {
+        const unit = units.find(u => u.id === unitId);
+        const booth = config.availableBooths?.find(b => b.id === boothId);
+
         const newUnits = units.map(u => {
-            if (u.id === id) {
-                const newScore = u.score + increment;
-                const clamped = Math.max(0, Math.min(newScore, maxScore));
-                return { ...u, score: clamped };
+            if (u.id === unitId && !(u.booths || []).includes(boothId)) {
+                return { ...u, booths: [...(u.booths || []), boothId] };
             }
             return u;
         });
-        const updatedUnit = newUnits.find(u => u.id === id);
-        console.log(`✅ Score updated: ${unit?.name} (${unit?.score} → ${updatedUnit?.score})`);
+
+        console.log(`✅ Booth added to unit: ${booth?.name} → ${unit?.name}`);
         saveUnits(newUnits);
+    };
+
+    const removeBoothFromUnit = (unitId, boothId) => {
+        const unit = units.find(u => u.id === unitId);
+        const booth = config.availableBooths?.find(b => b.id === boothId);
+
+        const newUnits = units.map(u => {
+            if (u.id === unitId) {
+                return { ...u, booths: (u.booths || []).filter(id => id !== boothId) };
+            }
+            return u;
+        });
+
+        console.log(`✅ Booth removed from unit: ${booth?.name} ← ${unit?.name}`);
+        saveUnits(newUnits);
+    };
+
+    // Legacy: Keep for backward compatibility (can be removed later)
+    const updateScore = (id, increment) => {
+        console.warn('⚠️ updateScore is deprecated, use addBoothToUnit/removeBoothFromUnit instead');
+        // For now, do nothing or implement basic booth add/remove
     };
 
     const updateUnit = (id, updates) => {
@@ -197,7 +308,7 @@ export function useConferenceData() {
         const newUnit = {
             id: maxId + 1,
             name,
-            score: 0,
+            booths: [],
             logo: null
         };
         console.log(`✅ Unit added: ${name} (ID: ${newUnit.id})`);
@@ -218,16 +329,16 @@ export function useConferenceData() {
     const resetData = () => {
         const resetUnits = units.map(unit => ({
             ...unit,
-            score: 0
+            booths: [] // Clear all booths instead of resetting score
         }));
-        console.log(`✅ All scores reset to 0 (${units.length} units)`);
+        console.log(`✅ All booths cleared (${units.length} units)`);
         saveUnits(resetUnits);
     };
 
     const refreshData = async () => {
         setIsLoading(true);
         try {
-            const data = await getInitialData(storageType);
+            const data = await getInitialData(storageType, config.availableBooths);
             setUnits(data);
             console.log('✅ Data refreshed successfully');
             return true;
@@ -242,10 +353,19 @@ export function useConferenceData() {
     return {
         units,
         config,
+        // Legacy
         updateScore,
+        // Unit management
         updateUnit,
         addUnit,
         removeUnit,
+        // Booth management
+        addBooth,
+        updateBooth,
+        removeBooth,
+        addBoothToUnit,
+        removeBoothFromUnit,
+        // Config
         updateConfig,
         resetData,
         refreshData,

@@ -7,6 +7,70 @@ import clsx from 'clsx';
 // Remove PAGE_SIZE constant
 const ROTATION_INTERVAL = 10000;
 
+// Helper function: Get average color from booths
+function getUnitAverageColor(unit, availableBooths) {
+    if (!unit.booths || unit.booths.length === 0) {
+        return '#64748b'; // slate-500 default
+    }
+
+    const colors = unit.booths
+        .map(boothId => availableBooths.find(b => b.id === boothId)?.color)
+        .filter(Boolean);
+
+    if (colors.length === 0) return '#64748b';
+    if (colors.length === 1) return colors[0];
+
+    // Simple: return first color as representative
+    return colors[0];
+}
+
+// Helper function: Create gradient string for progress bar
+function createBoothsGradient(unit, availableBooths, maxBooths = 10) {
+    if (!unit.booths || unit.booths.length === 0) {
+        return 'linear-gradient(to left, transparent, transparent)';
+    }
+
+    const colors = unit.booths
+        .map(boothId => availableBooths.find(b => b.id === boothId)?.color)
+        .filter(Boolean);
+
+    if (colors.length === 0) return 'linear-gradient(to left, #64748b, #64748b)';
+    if (colors.length === 1) return `linear-gradient(to left, ${colors[0]}, ${colors[0]})`;
+
+    // Create gradient with equal distribution
+    const stops = colors.map((color, idx) => {
+        const start = (idx / colors.length) * 100;
+        const end = ((idx + 1) / colors.length) * 100;
+        return `${color} ${start}%, ${color} ${end}%`;
+    }).join(', ');
+
+    return `linear-gradient(to left, ${stops})`;
+}
+
+// Helper function: Create VERTICAL gradient for podium (top 3)
+function createBoothsGradientVertical(unit, availableBooths) {
+    if (!unit.booths || unit.booths.length === 0) {
+        return 'linear-gradient(to bottom, transparent, transparent)';
+    }
+
+    const colors = unit.booths
+        .map(boothId => availableBooths.find(b => b.id === boothId)?.color)
+        .filter(Boolean);
+
+    if (colors.length === 0) return 'linear-gradient(to bottom, #64748b, #64748b)';
+    if (colors.length === 1) return `linear-gradient(to bottom, ${colors[0]}, ${colors[0]})`;
+
+    // Create vertical gradient with equal distribution
+    const stops = colors.map((color, idx) => {
+        const start = (idx / colors.length) * 100;
+        const end = ((idx + 1) / colors.length) * 100;
+        return `${color} ${start}%, ${color} ${end}%`;
+    }).join(', ');
+
+    return `linear-gradient(to bottom, ${stops})`;
+}
+
+
 export default function Dashboard() {
     const { units, config, refreshData } = useConferenceData();
     const [page, setPage] = useState(0);
@@ -28,9 +92,9 @@ export default function Dashboard() {
         let filtered = units;
         // Check explicit false, default is true
         if (config.showZero === false) {
-            filtered = units.filter(u => u.score > 0);
+            filtered = units.filter(u => (u.booths && u.booths.length > 0));
         }
-        return [...filtered].sort((a, b) => b.score - a.score);
+        return [...filtered].sort((a, b) => (b.booths?.length || 0) - (a.booths?.length || 0));
     }, [units, config.showZero]);
 
     const top3 = useMemo(() => sortedUnits.slice(0, 3), [sortedUnits]);
@@ -55,8 +119,9 @@ export default function Dashboard() {
     const currentBatch = rest.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
     // Stats
-    const totalFinished = units.filter(u => u.score >= 10).length;
-    const totalScore = units.reduce((acc, u) => acc + u.score, 0);
+    const availableBooths = config.availableBooths || [];
+    const totalFinished = units.filter(u => u.booths?.length >= availableBooths.length).length;
+    const totalScore = units.reduce((acc, u) => acc + (u.booths?.length || 0), 0);
     const avgScore = units.length > 0 ? (totalScore / units.length).toFixed(1) : 0;
 
     return (
@@ -126,7 +191,7 @@ export default function Dashboard() {
                     </div>
 
                     <StatCard icon={Users} label="סה״כ יחידות" value={units.length} color="from-blue-400 to-blue-600" />
-                    <StatCard icon={Store} label="מספר דוכנים" value={config.maxScore || 10} color="from-purple-400 to-purple-600" />
+                    <StatCard icon={Store} label="סוגי דוכנים" value={availableBooths.length} color="from-purple-400 to-purple-600" />
                     <StatCard icon={Trophy} label="סיימו מסלול" value={totalFinished} color="from-amber-400 to-orange-500" />
                     <StatCard icon={BarChart3} label="ניקוד כולל" value={totalScore} color="from-emerald-400 to-emerald-600" />
                 </div>
@@ -158,6 +223,22 @@ export default function Dashboard() {
                 </div>
             </aside>
 
+            {/* Left Side: Booths Legend */}
+            <aside className="hidden lg:flex w-48 flex-col gap-4 shrink-0 z-20 order-3 bg-slate-800/20 rounded-2xl p-4 border border-cyan-400/10 backdrop-blur-md">
+                <h3 className="text-xl font-black text-cyan-400 mb-2">מקרא דוכנים</h3>
+                {availableBooths.map((booth) => (
+                    <div key={booth.id} className="flex items-center gap-3 py-1.5">
+                        <div className="w-5 h-5 rounded-full shrink-0 shadow-lg ring-2 ring-white/20" style={{ backgroundColor: booth.color }} />
+                        <span className="text-white font-bold text-lg leading-tight" title={booth.name}>{booth.name}</span>
+                    </div>
+                ))}
+                {availableBooths.length === 0 && (
+                    <div className="text-base text-slate-500 text-center py-4">
+                        אין דוכנים זמינים
+                    </div>
+                )}
+            </aside>
+
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col lg:flex-row gap-3 lg:gap-6 z-20 order-2 lg:order-none">
 
@@ -173,13 +254,13 @@ export default function Dashboard() {
                     <div className="flex-1 flex items-end justify-center gap-3 lg:gap-6 pb-4 lg:pb-8">
                         <LayoutGroup id="podium">
                             {/* Silver (2nd) */}
-                            {top3[1] && <PodiumBar unit={top3[1]} rank={2} color="from-slate-300 via-slate-400 to-slate-500" height="60%" delay={0.2} />}
+                            {top3[1] && <PodiumBar unit={top3[1]} rank={2} color="from-slate-300 via-slate-400 to-slate-500" height="60%" delay={0.2} availableBooths={availableBooths} />}
 
                             {/* Gold (1st) */}
-                            {top3[0] && <PodiumBar unit={top3[0]} rank={1} color="from-yellow-300 via-yellow-500 to-yellow-600" height="85%" delay={0} />}
+                            {top3[0] && <PodiumBar unit={top3[0]} rank={1} color="from-yellow-300 via-yellow-500 to-yellow-600" height="85%" delay={0} availableBooths={availableBooths} />}
 
                             {/* Bronze (3rd) */}
-                            {top3[2] && <PodiumBar unit={top3[2]} rank={3} color="from-orange-300 via-orange-400 to-orange-500" height="45%" delay={0.4} />}
+                            {top3[2] && <PodiumBar unit={top3[2]} rank={3} color="from-orange-300 via-orange-400 to-orange-500" height="45%" delay={0.4} availableBooths={availableBooths} />}
                         </LayoutGroup>
                     </div>
                 </section>
@@ -208,7 +289,7 @@ export default function Dashboard() {
                             >
                                 <LayoutGroup id={`batch-${page}`}>
                                     {currentBatch.map((unit) => (
-                                        <RankRow key={unit.id} unit={unit} maxScore={config.maxScore || 10} />
+                                        <RankRow key={unit.id} unit={unit} availableBooths={availableBooths} />
                                     ))}
                                 </LayoutGroup>
                             </motion.div>
@@ -380,11 +461,13 @@ function UnitLogo({ unit, className }) {
     );
 }
 
-function PodiumBar({ unit, rank, color, height, delay }) {
+function PodiumBar({ unit, rank, color, height, delay, availableBooths }) {
+    const gradient = createBoothsGradientVertical(unit, availableBooths);
+
     return (
         <motion.div
             layoutId={`unit-${unit.id}`}
-            className="flex flex-col items-center justify-end w-1/3 max-w-[120px] relative z-10"
+            className="flex flex-col items-center justify-end w-1/3 max-w-[100px] relative z-10"
             style={{ height: "100%" }}
             transition={{ type: "spring", stiffness: 60, damping: 15 }}
         >
@@ -396,11 +479,12 @@ function PodiumBar({ unit, rank, color, height, delay }) {
                 >
                     {unit.name}
                 </motion.div>
-                <div className="font-mono font-black text-white text-xl lg:text-3xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{unit.score}</div>
+                <div className="font-mono font-black text-white text-xl lg:text-3xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{unit.booths?.length || 0}</div>
             </div>
 
             <motion.div
-                className={clsx("w-full rounded-t-2xl relative group shadow-[0_0_40px_rgba(6,182,212,0.4)] border-x border-t border-cyan-400/30", `bg-gradient-to-b ${color}`)}
+                className="w-full rounded-t-2xl relative group shadow-[0_0_40px_rgba(6,182,212,0.4)] border-x border-t border-cyan-400/30 overflow-hidden"
+                style={{ background: gradient }}
                 initial={{ height: 0 }}
                 animate={{ height }}
                 transition={{ type: "spring", stiffness: 50, damping: 15 }}
@@ -418,8 +502,11 @@ function PodiumBar({ unit, rank, color, height, delay }) {
     );
 }
 
-function RankRow({ unit, maxScore }) {
-    const barWidth = `${Math.min(100, (unit.score / (maxScore || 10)) * 100)}%`;
+function RankRow({ unit, availableBooths }) {
+    const totalBooths = availableBooths.length;
+    const unitBooths = unit.booths?.length || 0;
+    const barWidth = `${Math.min(100, (unitBooths / Math.max(totalBooths, 1)) * 100)}%`;
+    const gradient = createBoothsGradient(unit, availableBooths);
 
     return (
         <motion.div
@@ -443,7 +530,8 @@ function RankRow({ unit, maxScore }) {
             <div className="flex-1 h-2.5 lg:h-3.5 bg-black/40 rounded-full overflow-hidden relative shadow-inner cursor-default">
                 <motion.div
                     layout
-                    className="h-full bg-gradient-to-r from-cyan-400 to-blue-400 rounded-full shadow-[0_0_20px_rgba(6,182,212,0.7)] relative group-hover:shadow-[0_0_30px_rgba(6,182,212,0.9)]"
+                    className="h-full rounded-full shadow-[0_0_20px_rgba(6,182,212,0.7)] relative group-hover:shadow-[0_0_30px_rgba(6,182,212,0.9)]"
+                    style={{ background: gradient }}
                     initial={{ width: 0 }}
                     animate={{ width: barWidth }}
                     transition={{ type: "spring", stiffness: 50, damping: 15 }}
@@ -453,7 +541,7 @@ function RankRow({ unit, maxScore }) {
             </div>
 
             <div className="w-10 lg:w-12 font-mono font-black text-white text-right text-base lg:text-xl drop-shadow-sm">
-                {unit.score}
+                {unitBooths}
             </div>
         </motion.div>
     );

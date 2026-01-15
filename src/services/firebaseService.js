@@ -45,15 +45,46 @@ export async function saveUnitsData(unitsData, immediate = false) {
 }
 
 /**
+ * Sanitize data for Firestore (remove undefined values)
+ */
+function sanitizeForFirestore(data) {
+    if (Array.isArray(data)) {
+        return data.map(item => sanitizeForFirestore(item));
+    }
+
+    if (data !== null && typeof data === 'object') {
+        const sanitized = {};
+        for (const [key, value] of Object.entries(data)) {
+            // Skip undefined values - Firestore doesn't accept them
+            if (value === undefined) {
+                continue;
+            }
+            // Convert null to empty string for logo field specifically
+            if (key === 'logo' && value === null) {
+                sanitized[key] = '';
+            } else {
+                sanitized[key] = sanitizeForFirestore(value);
+            }
+        }
+        return sanitized;
+    }
+
+    return data;
+}
+
+/**
  * Internal function to perform the actual save
  */
 async function performSave(unitsData, retryCount = 0) {
     const MAX_RETRIES = 3;
 
     try {
+        // Sanitize data before saving to Firebase
+        const sanitizedData = sanitizeForFirestore(unitsData);
+
         const docRef = doc(db, COLLECTION_NAME, UNITS_DOC);
         await setDoc(docRef, {
-            units: unitsData,
+            units: sanitizedData,
             lastUpdated: new Date().toISOString()
         });
         // console.log('✅ Units data saved to Firebase');

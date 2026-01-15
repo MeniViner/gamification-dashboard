@@ -1,13 +1,17 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useConferenceData } from '../hooks/useConferenceData';
-import { Search, Plus, Minus, Settings, Trash2, Pen, Save, X, Upload, AlertTriangle, Lock, ArrowUpDown, SortAsc, RefreshCw } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, Plus, Trash2, Pen, Save, Upload, X, Settings, RefreshCw, Archive, SortAsc, SortDesc, ChevronDown, Eye, EyeOff, ChevronLeft, Store } from 'lucide-react';
 import clsx from 'clsx';
+
 
 const ADMIN_PASSWORD = "מני2026המתכנת";
 const AUTH_STORAGE_KEY = "admin_authenticated";
 
 export default function Admin() {
-    const { units, config, updateScore, updateUnit, addUnit, removeUnit, updateConfig, resetData, refreshData, isLoading } = useConferenceData();
+    const navigate = useNavigate();
+    const { units, config, updateUnit, addUnit, removeUnit, updateConfig, resetData, refreshData, isLoading, addBooth, updateBooth, removeBooth, addBoothToUnit, removeBoothFromUnit } = useConferenceData();
 
     // Authentication State - Check localStorage on mount
     const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -25,6 +29,8 @@ export default function Admin() {
     const [showConfig, setShowConfig] = useState(false);
     const [newUnitName, setNewUnitName] = useState("");
     const [modalState, setModalState] = useState({ show: false, type: null, unitId: null, unitName: null });
+    const [isAdding, setIsAdding] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
 
     // Handle Password Submit
     const handlePasswordSubmit = (e) => {
@@ -149,6 +155,7 @@ export default function Admin() {
                         </div>
                     </div>
 
+
                     {/* Actions Bar */}
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-1">
 
@@ -175,34 +182,46 @@ export default function Admin() {
                                         : "bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-white border-white/10"
                                 )}
                             >
-                                <SortAsc size={14} className="sm:w-4 sm:h-4" />
+                                {sortMode === "score" ? <SortDesc size={14} className="sm:w-[16px] sm:h-[16px]" /> : <SortAsc size={14} className="sm:w-[16px] sm:h-[16px]" />}
                                 <span className="hidden sm:inline">{sortMode === "score" ? "לפי ניקוד" : "לפי שם"}</span>
                                 <span className="sm:hidden">{sortMode === "score" ? "ניקוד" : "שם"}</span>
                             </button>
 
-                            {/* Add Unit */}
-                            <form onSubmit={handleAddUnit} className="flex gap-1.5 sm:gap-2 flex-1 sm:flex-none">
-                                <input
-                                    type="text"
-                                    placeholder="הוסף יחידה..."
-                                    className="flex-1 sm:flex-none px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-base rounded-lg sm:rounded-xl border border-white/10 bg-slate-900/50 focus:bg-slate-900/80 focus:ring-2 focus:ring-emerald-500/50 outline-none sm:w-32 focus:sm:w-48 lg:w-40 focus:lg:w-60 transition-all placeholder:text-slate-500"
-                                    value={newUnitName}
-                                    onChange={e => setNewUnitName(e.target.value)}
-                                />
-                                <button type="submit" disabled={!newUnitName} className="bg-emerald-500 hover:bg-emerald-600 text-white p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-emerald-500/20 active:scale-95">
-                                    <Plus size={14} className="sm:w-5 sm:h-5" />
-                                </button>
-                            </form>
+                            {/* Add Unit Toggle Button */}
+                            <button
+                                onClick={() => setIsAdding(!isAdding)}
+                                className={clsx(
+                                    "flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl transition-all border text-xs sm:text-sm font-bold whitespace-nowrap touch-manipulation",
+                                    isAdding
+                                        ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/50"
+                                        : "bg-slate-800/50 text-slate-400 hover:bg-emerald-500/10 hover:text-emerald-400 border-white/10 hover:border-emerald-500/30"
+                                )}
+                            >
+                                <Plus size={14} className="sm:w-[16px] sm:h-[16px]" />
+                                <span className="hidden sm:inline">יחידה</span>
+                            </button>
+
+                            {/* Booths Management */}
+                            <button
+                                onClick={() => navigate('/admin/booths')}
+                                className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl transition-all border text-xs sm:text-sm font-bold whitespace-nowrap touch-manipulation bg-purple-500/20 text-purple-400 border-purple-500/50 hover:bg-purple-500/30"
+                            >
+                                <Store size={14} className="sm:w-[16px] sm:h-[16px]" />
+                                <span className="hidden sm:inline">ניהול דוכנים</span>
+                            </button>
 
                             {/* Settings Toggle */}
                             <button
-                                onClick={() => setShowConfig(!showConfig)}
+                                onClick={() => setShowSettings(!showSettings)}
                                 className={clsx(
-                                    "p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl transition-all border border-white/10",
-                                    showConfig ? "bg-cyan-500/20 text-cyan-400 border-cyan-500/50" : "bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-white"
+                                    "flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl transition-all border text-xs sm:text-sm font-bold whitespace-nowrap touch-manipulation",
+                                    showSettings
+                                        ? "bg-cyan-500/20 text-cyan-400 border-cyan-500/50"
+                                        : "bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-white border-white/10"
                                 )}
                             >
-                                <Settings size={14} className="sm:w-5 sm:h-5" />
+                                <Settings size={14} className="sm:w-[16px] sm:h-[16px]" />
+                                <span className="hidden sm:inline">הגדרות</span>
                             </button>
 
                             <button
@@ -230,8 +249,50 @@ export default function Admin() {
                     </div>
                 </div>
 
+                {/* Add Unit Input Form */}
+                <AnimatePresence>
+                    {isAdding && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="max-w-7xl mx-auto overflow-hidden"
+                        >
+                            <form onSubmit={handleAddUnit} className="flex gap-2 p-3 bg-slate-900/50 rounded-xl border border-emerald-500/30">
+                                <input
+                                    type="text"
+                                    placeholder="שם היחידה החדשה..."
+                                    className="flex-1 px-4 py-2.5 text-base rounded-xl border border-white/10 bg-slate-900/50 focus:bg-slate-900/80 focus:ring-2 focus:ring-emerald-500/50 outline-none transition-all placeholder:text-slate-500"
+                                    value={newUnitName}
+                                    onChange={e => setNewUnitName(e.target.value)}
+                                    autoFocus
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={!newUnitName.trim()}
+                                    className="bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-700 disabled:text-slate-500 text-white px-6 py-2.5 rounded-xl font-bold transition-all  shadow-lg hover:shadow-emerald-500/20 active:scale-95 flex items-center gap-2"
+                                >
+                                    <Plus size={18} />
+                                    <span>הוסף</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsAdding(false);
+                                        setNewUnitName('');
+                                    }}
+                                    className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-bold transition-colors"
+                                >
+                                    ביטול
+                                </button>
+                            </form>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
                 {/* Config Panel (Collapsible) */}
-                {showConfig && (
+                {showSettings && (
                     <div className="max-w-7xl mx-auto mt-2 sm:mt-3 lg:mt-4 p-3 sm:p-4 lg:p-6 bg-slate-900/90 rounded-2xl border border-white/10 shadow-2xl backdrop-blur-md transition-all duration-300">
                         <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3 sm:gap-4 lg:gap-8">
                             <div className="flex flex-col gap-2 w-full lg:w-auto">
@@ -248,21 +309,7 @@ export default function Admin() {
                                 </div>
                             </div>
 
-                            <div className="flex flex-col gap-2 w-full lg:w-auto">
-                                <label className="text-xs sm:text-sm font-bold text-slate-400">מספר דוכנים</label>
-                                <div className="flex items-center gap-3 bg-slate-950 p-1 rounded-lg border border-white/5 w-full sm:w-fit">
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        max="100"
-                                        value={config.maxScore || 10}
-                                        onChange={(e) => updateConfig({ maxScore: parseInt(e.target.value) || 10 })}
-                                        className="w-16 px-3 py-1 bg-transparent text-center font-mono font-bold focus:outline-none text-sm sm:text-base"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="hidden lg:block h-10 w-px bg-white/10" />
+                            {/* Removed "מספר דוכנים" - now calculated from availableBooths */}
 
                             <div className="flex flex-col gap-2 w-full lg:w-auto">
                                 <label className="text-xs sm:text-sm font-bold text-slate-400">הצג יחידות עם 0</label>
@@ -343,10 +390,10 @@ export default function Admin() {
                                     handleSaveEdit={handleSaveEdit}
                                     handleEditClick={handleEditClick}
                                     handleRemoveClick={handleRemoveClick}
-                                    updateScore={updateScore}
-                                    removeUnit={removeUnit}
+                                    addBoothToUnit={addBoothToUnit}
+                                    removeBoothFromUnit={removeBoothFromUnit}
                                     setEditingId={setEditingId}
-                                    maxScore={config.maxScore || 10}
+                                    availableBooths={config.availableBooths || []}
                                 />
                             ))}
                         </div>
@@ -433,15 +480,15 @@ function LoginScreen({ passwordInput, setPasswordInput, handlePasswordSubmit, pa
             </div>
 
             <style>{`
-                @keyframes shake {
-                    0%, 100% { transform: translateX(0); }
-                    25% { transform: translateX(-10px); }
-                    75% { transform: translateX(10px); }
-                }
-                .animate-shake {
-                    animation: shake 0.4s ease-in-out;
-                }
-            `}</style>
+@keyframes shake {
+    0 %, 100 % { transform: translateX(0); }
+    25 % { transform: translateX(-10px); }
+    75 % { transform: translateX(10px); }
+}
+                .animate - shake {
+    animation: shake 0.4s ease -in -out;
+}
+`}</style>
         </div>
     );
 }
@@ -462,13 +509,13 @@ function ConfirmModal({ type, unitName, onConfirm, onCancel }) {
 
     return (
         <div
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
+            className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
             onClick={onCancel}
             dir="rtl"
             style={{ animation: 'fadeIn 0.3s ease-out' }}
         >
             <div
-                className="relative bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl max-w-md w-full p-6 lg:p-8 transition-all duration-300"
+                className="relative bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl max-w-[90vw] sm:max-w-md w-full p-4 sm:p-6 lg:p-8 transition-all duration-300"
                 onClick={(e) => e.stopPropagation()}
                 style={{ animation: 'slideUp 0.3s ease-out' }}
             >
@@ -478,8 +525,8 @@ function ConfirmModal({ type, unitName, onConfirm, onCancel }) {
 
                 {/* Icon */}
                 <div className="flex justify-center mb-4">
-                    <div className={`p-4 rounded-2xl ${isReset ? 'bg-rose-500/20' : 'bg-rose-500/20'}`}>
-                        <AlertTriangle className={`w-8 h-8 ${isReset ? 'text-rose-400' : 'text-rose-400'}`} />
+                    <div className={`p - 4 rounded - 2xl ${isReset ? 'bg-rose-500/20' : 'bg-rose-500/20'} `}>
+                        <AlertTriangle className={`w - 8 h - 8 ${isReset ? 'text-rose-400' : 'text-rose-400'} `} />
                     </div>
                 </div>
 
@@ -527,8 +574,21 @@ function ConfirmModal({ type, unitName, onConfirm, onCancel }) {
     );
 }
 
-function AdminUnitCard({ unit, editingId, editForm, setEditForm, handleLogoUpload, handleSaveEdit, handleEditClick, handleRemoveClick, updateScore, removeUnit, setEditingId, maxScore }) {
+function AdminUnitCard({ unit, editingId, editForm, setEditForm, handleLogoUpload, handleSaveEdit, handleEditClick, handleRemoveClick, addBoothToUnit, removeBoothFromUnit, setEditingId, availableBooths }) {
     const isEditing = editingId === unit.id;
+
+    // Check if booth is assigned to this unit
+    const isBoothAssigned = (boothId) => {
+        return (unit.booths || []).includes(boothId);
+    };
+
+    const handleBoothToggle = (boothId) => {
+        if (isBoothAssigned(boothId)) {
+            removeBoothFromUnit(unit.id, boothId);
+        } else {
+            addBoothToUnit(unit.id, boothId);
+        }
+    };
 
     return (
         <div className={clsx(
@@ -586,7 +646,7 @@ function AdminUnitCard({ unit, editingId, editForm, setEditForm, handleLogoUploa
                         <div className="flex justify-between items-start">
                             <div className="w-full">
                                 <div className="font-bold text-sm sm:text-base lg:text-lg text-white truncate w-full" title={unit.name}>{unit.name}</div>
-                                <div className="text-[10px] sm:text-xs font-mono text-slate-500">ID: {unit.id}</div>
+                                <div className="text-[10px] sm:text-xs font-mono text-slate-500">ID: {unit.id} • {unit.booths?.length || 0} דוכנים</div>
                             </div>
 
                             <div className="flex gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
@@ -602,26 +662,38 @@ function AdminUnitCard({ unit, editingId, editForm, setEditForm, handleLogoUploa
                 </div>
             </div>
 
-            {/* Score Controls */}
-            <div className="mt-1 sm:mt-2 flex items-center justify-between bg-slate-900/50 p-1.5 rounded-xl border border-white/5">
-                <button
-                    onClick={() => updateScore(unit.id, -1)}
-                    className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-all active:scale-90 touch-manipulation"
-                >
-                    <Minus size={14} className="sm:w-[18px] sm:h-[18px]" />
-                </button>
-
-                <div className="flex flex-col items-center">
-                    <span className="text-xl sm:text-2xl font-black font-mono text-white tracking-wider">{unit.score}</span>
-                </div>
-
-                <button
-                    onClick={() => updateScore(unit.id, 1)}
-                    disabled={unit.score >= maxScore}
-                    className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg bg-slate-800 hover:bg-emerald-500/20 text-slate-400 hover:text-emerald-400 transition-all active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed touch-manipulation"
-                >
-                    <Plus size={14} className="sm:w-[18px] sm:h-[18px]" />
-                </button>
+            {/* Booths Toggle Buttons */}
+            <div className="mt-2 flex flex-wrap gap-1.5">
+                {availableBooths.map(booth => {
+                    const assigned = isBoothAssigned(booth.id);
+                    return (
+                        <button
+                            key={booth.id}
+                            onClick={() => handleBoothToggle(booth.id)}
+                            className={clsx(
+                                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 transition-all text-xs font-medium",
+                                assigned
+                                    ? "border-white/30 shadow-lg"
+                                    : "border-white/10 bg-slate-900/30 hover:border-white/20 opacity-60 hover:opacity-100"
+                            )}
+                            style={{
+                                backgroundColor: assigned ? booth.color : 'transparent',
+                                color: assigned ? '#fff' : '#94a3b8'
+                            }}
+                        >
+                            <div
+                                className="w-2 h-2 rounded-full border border-white/30"
+                                style={{ backgroundColor: assigned ? '#fff' : booth.color }}
+                            />
+                            <span className="font-bold">{booth.name}</span>
+                        </button>
+                    );
+                })}
+                {availableBooths.length === 0 && (
+                    <div className="text-xs text-slate-500 italic py-2">
+                        אין דוכנים זמינים - לחץ על "ניהול דוכנים" כדי להוסיף
+                    </div>
+                )}
             </div>
         </div>
     );

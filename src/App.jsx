@@ -1,16 +1,17 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Admin from './pages/Admin';
+import BoothsManagement from './pages/BoothsManagement';
 
-function App() {
+export default function App() {
     return (
-        <Router>
+        <BrowserRouter>
             <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/admin" element={<Admin />} />
+                <Route path="/admin/booths" element={<BoothsManagement />} />
             </Routes>
-        </Router>
+        </BrowserRouter>
     );
 }
-
-export default App;
