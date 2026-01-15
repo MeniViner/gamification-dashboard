@@ -389,6 +389,40 @@ export function useConferenceData() {
         }
     };
 
+    const syncLocalStorageToFirebase = async () => {
+        if (storageType !== 'firebase') {
+            console.warn('⚠️ Cannot sync - not in Firebase mode');
+            return false;
+        }
+
+        try {
+            // Read config from localStorage
+            const stored = localStorage.getItem(CONFIG_KEY);
+            if (!stored) {
+                console.warn('⚠️ No config found in localStorage');
+                return false;
+            }
+
+            const localConfig = JSON.parse(stored);
+            console.log('📤 Uploading config from localStorage to Firebase...');
+
+            // Save to Firebase
+            const success = await saveConfig(localConfig);
+            if (success) {
+                console.log('✅ Successfully synced localStorage config to Firebase!');
+                // Update local state to match
+                setConfig(localConfig);
+                return true;
+            } else {
+                console.error('❌ Failed to sync to Firebase');
+                return false;
+            }
+        } catch (error) {
+            console.error('❌ Error syncing to Firebase:', error);
+            return false;
+        }
+    };
+
     return {
         units,
         config,
@@ -408,6 +442,7 @@ export function useConferenceData() {
         updateConfig,
         resetData,
         refreshData,
+        syncLocalStorageToFirebase,
         isLoading
     };
 }

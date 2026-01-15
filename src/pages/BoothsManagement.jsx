@@ -2,16 +2,31 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useConferenceData } from '../hooks/useConferenceData';
-import { Plus, Trash2, Pen, Save, X, ArrowRight } from 'lucide-react';
+import { Plus, Trash2, Pen, Save, X, ArrowRight, Upload } from 'lucide-react';
 
 export default function BoothsManagementPage() {
     const navigate = useNavigate();
-    const { config, addBooth, updateBooth, removeBooth } = useConferenceData();
+    const { config, addBooth, updateBooth, removeBooth, syncLocalStorageToFirebase } = useConferenceData();
     const [isAdding, setIsAdding] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [formData, setFormData] = useState({ name: '', color: '#FF6B6B' });
+    const [isSyncing, setIsSyncing] = useState(false);
 
     const availableBooths = config.availableBooths || [];
+
+    const handleSyncToFirebase = async () => {
+        if (window.confirm('האם להעלות את הגדרות הדוכנים מ-localStorage ל-Firebase?\n\nפעולה זו תשכתב את ההגדרות הקיימות ב-Firebase.')) {
+            setIsSyncing(true);
+            const success = await syncLocalStorageToFirebase();
+            setIsSyncing(false);
+
+            if (success) {
+                alert('✅ הדוכנים הועלו בהצלחה ל-Firebase!');
+            } else {
+                alert('❌ שגיאה בהעלאה ל-Firebase. בדוק את הקונסול למידע נוסף.');
+            }
+        }
+    };
 
     const handleAdd = () => {
         if (formData.name.trim()) {
@@ -57,7 +72,18 @@ export default function BoothsManagementPage() {
                     חזרה לניהול
                 </button>
                 <h1 className="text-4xl font-black text-white mb-2">ניהול דוכנים</h1>
-                <p className="text-slate-400">הוסף, ערוך או מחק דוכנים זמינים</p>
+                <div className="flex items-center justify-between">
+                    <p className="text-slate-400">הוסף, ערוך או מחק דוכנים זמינים</p>
+                    <button
+                        onClick={handleSyncToFirebase}
+                        disabled={isSyncing}
+                        className="flex items-center gap-2 px-4 py-2 bg-cyan-500/20 border border-cyan-500/50 rounded-lg hover:bg-cyan-500/30 hover:border-cyan-500 transition-all text-cyan-400 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="העלה דוכנים מ-localStorage ל-Firebase"
+                    >
+                        <Upload size={18} className={isSyncing ? 'animate-pulse' : ''} />
+                        {isSyncing ? 'מעלה...' : 'סנכרן ל-Firebase'}
+                    </button>
+                </div>
             </div>
 
             {/* Content */}

@@ -464,6 +464,11 @@ function UnitLogo({ unit, className }) {
 function PodiumBar({ unit, rank, color, height, delay, availableBooths }) {
     const gradient = createBoothsGradientVertical(unit, availableBooths);
 
+    // Calculate progress percentage relative to total available booths
+    const totalBooths = Math.max(availableBooths.length, 1);
+    const unitBooths = unit.booths?.length || 0;
+    const progressPercent = Math.min(100, (unitBooths / totalBooths) * 100);
+
     return (
         <motion.div
             layoutId={`unit-${unit.id}`}
@@ -482,19 +487,34 @@ function PodiumBar({ unit, rank, color, height, delay, availableBooths }) {
                 <div className="font-mono font-black text-white text-xl lg:text-3xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{unit.booths?.length || 0}</div>
             </div>
 
+            {/* Podium Pillar Container (Track) */}
             <motion.div
-                className="w-full rounded-t-2xl relative group shadow-[0_0_40px_rgba(6,182,212,0.4)] border-x border-t border-cyan-400/30 overflow-hidden"
-                style={{ background: gradient }}
+                className="w-full rounded-t-2xl relative shadow-[0_0_40px_rgba(6,182,212,0.4)] border-x border-t border-cyan-400/30 overflow-hidden bg-slate-900/60 backdrop-blur-sm"
                 initial={{ height: 0 }}
                 animate={{ height }}
                 transition={{ type: "spring", stiffness: 50, damping: 15 }}
             >
-                <div className="absolute top-2 lg:top-4 w-full text-center font-black text-white text-3xl lg:text-5xl drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] opacity-40 mix-blend-overlay">
+                {/* Background Track Pattern/Glow */}
+                <div className="absolute inset-0 bg-[url('/noise.png')] opacity-5 mix-blend-overlay" />
+
+                {/* Progress Bar (Fill) */}
+                <motion.div
+                    className="absolute bottom-0 left-0 right-0 w-full"
+                    style={{ background: gradient }}
+                    initial={{ height: 0 }}
+                    animate={{ height: `${progressPercent}%` }}
+                    transition={{ type: "spring", stiffness: 40, damping: 20, delay: 0.2 }}
+                >
+                    {/* Top shine for the fill */}
+                    <div className="absolute top-0 left-0 right-0 h-[1px] bg-white/50 shadow-[0_0_10px_white]" />
+                </motion.div>
+
+                <div className="absolute top-2 lg:top-4 w-full text-center font-black text-white text-3xl lg:text-5xl drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] opacity-40 mix-blend-overlay z-20 pointer-events-none">
                     {rank}
                 </div>
-                {/* Enhanced Glow effect */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-white/30 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-2xl" />
-                <div className="absolute -inset-1 bg-gradient-to-t from-cyan-400/20 via-blue-400/20 to-transparent rounded-t-2xl blur-xl opacity-50" />
+
+                {/* Enhanced Hover Glow effect (on the whole pillar) */}
+                <div className="absolute inset-0 bg-gradient-to-t from-cyan-400/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
             </motion.div>
 
             <div className="mt-1 lg:mt-3 font-bold text-slate-400 text-xs lg:text-sm tracking-widest">מקום {rank}</div>
@@ -526,7 +546,7 @@ function ScrollingText({ text, className }) {
                 ref={textRef}
                 className={shouldScroll ? 'inline-block whitespace-nowrap' : 'truncate'}
                 style={shouldScroll ? {
-                    animation: 'scroll-text 8s linear infinite',
+                    animation: 'scroll-text 4s linear infinite',
                 } : {}}
             >
                 {text}
