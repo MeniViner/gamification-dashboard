@@ -167,22 +167,24 @@ export function useConferenceData() {
     useEffect(() => {
         if (storageType !== 'firebase') return;
 
-        // console.log('🔥 Firebase real-time listener activated');
+        console.log('🔥 Firebase real-time listener activated');
         let unsubscribeUnits = null;
         let unsubscribeConfig = null;
 
         // Subscribe to units changes
         unsubscribeUnits = subscribeToUnitsData((updatedUnits) => {
             if (updatedUnits) {
-                // console.log('🔄 Received Firebase update, units count:', updatedUnits.length);
+                console.log('🔄 Received Firebase update, units count:', updatedUnits.length);
                 setUnits(updatedUnits);
+            } else {
+                console.warn('⚠️ Received null/empty update from Firebase');
             }
         });
 
         // Subscribe to config changes (for booth definitions)
         unsubscribeConfig = subscribeToConfig((updatedConfig) => {
             if (updatedConfig && updatedConfig.availableBooths) {
-                // console.log('🔄 Received Firebase config update, booths count:', updatedConfig.availableBooths.length);
+                console.log('🔄 Received Firebase config update, booths count:', updatedConfig.availableBooths.length);
                 setConfig(prev => ({
                     ...prev,
                     availableBooths: updatedConfig.availableBooths
@@ -192,6 +194,7 @@ export function useConferenceData() {
 
         // Cleanup subscriptions
         return () => {
+            console.log('🛑 Unsubscribing from Firebase listeners');
             if (unsubscribeUnits) unsubscribeUnits();
             if (unsubscribeConfig) unsubscribeConfig();
         };

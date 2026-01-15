@@ -9,6 +9,7 @@ const CONFIG_DOC = 'config';
 // Debounce timer for writes
 let writeDebounceTimer = null;
 let pendingUnitsData = null;
+let lastSavedJson = null;
 
 /**
  * Save units data to Firestore with debouncing
@@ -20,6 +21,16 @@ export async function saveUnitsData(unitsData, immediate = false) {
     if (!isFirebaseConfigured() || !db) {
         console.warn('Firebase not configured, skipping save to Firestore');
         return false;
+    }
+
+    // Sanitize first to ensure consistent comparison
+    const sanitizedDataForComparison = sanitizeForFirestore(unitsData);
+    const currentJson = JSON.stringify(sanitizedDataForComparison);
+
+    // Optimization: Skip save if data hasn't changed effectively
+    if (lastSavedJson === currentJson) {
+        // console.log('ℹ️ Skipping save - data unchanged');
+        return true;
     }
 
     // Store the latest data
@@ -47,9 +58,18 @@ export async function saveUnitsData(unitsData, immediate = false) {
 /**
  * Sanitize data for Firestore (remove undefined values)
  */
+/**
+ * Sanitize data for Firestore (remove undefined values)
+ */
 function sanitizeForFirestore(data) {
+    if (data === undefined) {
+        return null;
+    }
+
     if (Array.isArray(data)) {
-        return data.map(item => sanitizeForFirestore(item));
+        return data
+            .filter(item => item !== undefined)
+            .map(item => sanitizeForFirestore(item));
     }
 
     if (data !== null && typeof data === 'object') {
@@ -87,21 +107,32 @@ async function performSave(unitsData, retryCount = 0) {
             units: sanitizedData,
             lastUpdated: new Date().toISOString()
         });
+
+        // Update the last saved state
+        lastSavedJson = JSON.stringify(sanitizedData);
         // console.log('✅ Units data saved to Firebase');
         return true;
     } catch (error) {
-        // Check if it's a network or rate limit error
-        if ((error.code === 'resource-exhausted' || error.code === 'unavailable') && retryCount < MAX_RETRIES) {
-            console.warn(`⚠️ Firebase write failed (${error.code}), retrying... (${retryCount + 1}/${MAX_RETRIES})`);
+        // Check if it's a network error (unavailable)
+        // CRITICAL: Do NOT retry on 'resource-exhausted' to prevent loops
+        if (error.code === 'unavailable' && retryCount < MAX_RETRIES) {
+            console.warn(`⚠️ Firebase unavailable, retrying... (${retryCount + 1}/${MAX_RETRIES})`);
 
-            // Exponential backoff: wait longer before each retry
-            const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+            // Exponential backoff
+            const delay = Math.pow(2, retryCount) * 1000;
             await new Promise(resolve => setTimeout(resolve, delay));
 
             return await performSave(unitsData, retryCount + 1);
         }
 
-        console.error('❌ Error saving units to Firebase:', error.code || error.message);
+        if (error.code === 'resource-exhausted') {
+            console.error('❌ Firebase Quota Exceeded (resource-exhausted). Stop saving temporarily.');
+            // Do not retry.
+        } else {
+            console.error('❌ Error saving units to Firebase:', error.code || error.message);
+            console.error('Data causing error (sanitized):', JSON.stringify(sanitizeForFirestore(unitsData)).substring(0, 500) + '...');
+        }
+
         return false;
     }
 }
