@@ -1,0 +1,22 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Config and main data
+    match /conference_data/{document=**} {
+      allow read, write: if true;
+    }
+    
+    // Logos collection
+    match /logos/{document=**} {
+      allow read, write: if true;
+    }
+    
+    // Allow read/write for all other documents during development
+    // You should restrict this before going to production if you add real auth
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

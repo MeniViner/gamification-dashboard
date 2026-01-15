@@ -5,7 +5,10 @@ import {
     subscribeToUnitsData,
     saveConfig,
     loadConfig,
-    subscribeToConfig
+    subscribeToConfig,
+    saveLogo,
+    deleteLogo,
+    subscribeToLogos
 } from '../services/firebaseService';
 import { isFirebaseConfigured } from '../services/firebase';
 
@@ -118,7 +121,8 @@ export function useConferenceData() {
     const storageType = isFirebaseConfigured() ? 'firebase' : (config.storageType || 'localStorage');
     // console.log('📊 Storage mode:', storageType, '| Firebase configured:', isFirebaseConfigured());
 
-    const [units, setUnits] = useState(getDefaultData); // Start with default, will load async
+    const [units, setUnits] = useState(getDefaultData);
+    const [logos, setLogos] = useState([]); // Logo library
     const [isLoading, setIsLoading] = useState(false);
 
     // Load initial data and config when storage type changes
@@ -192,11 +196,20 @@ export function useConferenceData() {
             }
         });
 
+        // Subscribe to logos
+        const unsubscribeLogos = subscribeToLogos((updatedLogos) => {
+            if (updatedLogos) {
+                console.log('🔄 Received logos update:', updatedLogos.length);
+                setLogos(updatedLogos);
+            }
+        });
+
         // Cleanup subscriptions
         return () => {
             console.log('🛑 Unsubscribing from Firebase listeners');
             if (unsubscribeUnits) unsubscribeUnits();
             if (unsubscribeConfig) unsubscribeConfig();
+            if (unsubscribeLogos) unsubscribeLogos();
         };
     }, [storageType]);
 
@@ -426,6 +439,54 @@ export function useConferenceData() {
         }
     };
 
+    // --- Logo Management ---
+
+    const addNewLogo = async (name, base64Data) => {
+        const newId = `logo-${Date.now()}`;
+        const newLogo = { id: newId, name, data: base64Data };
+        if (storageType === 'firebase') {
+            await saveLogo(newLogo);
+        } else {
+            // Local mock for logos (optional, mostly for testing)
+            setLogos(prev => [...prev, newLogo]);
+        }
+        return newId;
+    };
+
+    const removeLogoArg = async (logoId) => {
+        if (storageType === 'firebase') {
+            await deleteLogo(logoId);
+        } else {
+            setLogos(prev => prev.filter(l => l.id !== logoId));
+        }
+
+        // Optional: Remove usage from units? Or keep broken link?
+        // Let's keep it simple for now.
+    };
+
+    // Helper to resolve unit logo
+    const getUnitLogo = (unit) => {
+        // Priority 1: generic logoId reference
+        if (unit.logoId) {
+            const logoObj = logos.find(l => l.id === unit.logoId);
+            if (logoObj) return logoObj.data;
+        }
+        // Priority 2: embedded legacy logo (fallback)
+        if (unit.logo) return unit.logo;
+
+        return null;
+    };
+
+    // Dangerous: Clear all legacy embedded logos
+    const clearAllEmbeddedLogos = () => {
+        const cleanedUnits = units.map(u => ({
+            ...u,
+            logo: null // Clear direct embedded base64
+        }));
+        console.log('🧹 Cleared all embedded logos from units');
+        saveUnits(cleanedUnits);
+    };
+
     return {
         units,
         config,
@@ -446,6 +507,12 @@ export function useConferenceData() {
         resetData,
         refreshData,
         syncLocalStorageToFirebase,
-        isLoading
+        isLoading,
+        // Logos
+        logos,
+        addNewLogo,
+        removeLogoArg,
+        getUnitLogo,
+        clearAllEmbeddedLogos
     };
 }

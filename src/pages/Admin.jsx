@@ -2,8 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useConferenceData } from '../hooks/useConferenceData';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Plus, Trash2, Pen, Save, Upload, X, Settings, RefreshCw, Archive, SortAsc, SortDesc, ChevronDown, Eye, EyeOff, ChevronLeft, Store, AlertTriangle, Lock } from 'lucide-react';
+import { Search, Plus, Trash2, Pen, Save, Upload, X, Settings, RefreshCw, Archive, SortAsc, SortDesc, ChevronDown, Eye, EyeOff, ChevronLeft, Store, AlertTriangle, Lock, Image as ImageIcon, Eraser } from 'lucide-react';
 import clsx from 'clsx';
+import { compressImage } from '../utils/imageUtils';
 
 
 const ADMIN_PASSWORD = "מני2026המתכנת";
@@ -11,7 +12,7 @@ const AUTH_STORAGE_KEY = "admin_authenticated";
 
 export default function Admin() {
     const navigate = useNavigate();
-    const { units, config, updateUnit, addUnit, removeUnit, updateConfig, resetData, refreshData, isLoading, addBooth, updateBooth, removeBooth, addBoothToUnit, removeBoothFromUnit } = useConferenceData();
+    const { units, config, updateUnit, addUnit, removeUnit, updateConfig, resetData, refreshData, isLoading, addBooth, updateBooth, removeBooth, addBoothToUnit, removeBoothFromUnit, logos, clearAllEmbeddedLogos, getUnitLogo } = useConferenceData();
 
     // Authentication State - Check localStorage on mount
     const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -63,7 +64,7 @@ export default function Admin() {
     // Handlers
     const handleEditClick = (unit) => {
         setEditingId(unit.id);
-        setEditForm({ name: unit.name, logo: unit.logo || "" });
+        setEditForm({ name: unit.name, logo: unit.logo || "", logoId: unit.logoId || null }); // Include logoId
     };
 
     const handleSaveEdit = () => {
@@ -79,14 +80,23 @@ export default function Admin() {
         }
     };
 
-    const handleLogoUpload = (e) => {
+    const handleLogoUpload = async (e) => {
         const file = e.target.files[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setEditForm(prev => ({ ...prev, logo: reader.result }));
-            };
-            reader.readAsDataURL(file);
+            try {
+                // Compress image before setting to state (max 150px, 0.6 quality)
+                // This is critical to keep the total document size under Firestore's 1MB limit
+                const compressedBase64 = await compressImage(file, 150, 0.6);
+                setEditForm(prev => ({ ...prev, logo: compressedBase64 }));
+            } catch (error) {
+                console.error("Error compressing image:", error);
+                // Fallback to original reader if compression fails (though unlikely)
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setEditForm(prev => ({ ...prev, logo: reader.result }));
+                };
+                reader.readAsDataURL(file);
+            }
         }
     };
 
@@ -210,6 +220,15 @@ export default function Admin() {
                                 <span className="hidden sm:inline">ניהול דוכנים</span>
                             </button>
 
+                            {/* Logo Management */}
+                            <button
+                                onClick={() => navigate('/admin/logos')}
+                                className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl transition-all border text-xs sm:text-sm font-bold whitespace-nowrap touch-manipulation bg-pink-500/20 text-pink-400 border-pink-500/50 hover:bg-pink-500/30"
+                            >
+                                <ImageIcon size={14} className="sm:w-[16px] sm:h-[16px]" />
+                                <span className="hidden sm:inline">ניהול סמלים</span>
+                            </button>
+
                             {/* Settings Toggle */}
                             <button
                                 onClick={() => setShowSettings(!showSettings)}
@@ -245,12 +264,25 @@ export default function Admin() {
                             >
                                 <Trash2 size={14} className="sm:w-5 sm:h-5" />
                             </button>
+
+                            <button
+                                onClick={() => {
+                                    if (window.confirm("פעולה זו תמחק את כל התמונות הישנות (Embedded) מהיחידות כדי לפנות מקום. האם להמשיך?")) {
+                                        clearAllEmbeddedLogos();
+                                    }
+                                }}
+                                title="מחיקת תמונות ישנות (Embedded)"
+                                className="p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl transition-all border border-white/10 bg-slate-800/50 text-orange-400 hover:bg-orange-500/10 hover:border-orange-500/30"
+                            >
+                                <Eraser size={14} className="sm:w-5 sm:h-5" />
+                            </button>
                         </div>
                     </div>
                 </div>
 
+
                 {/* Add Unit Input Form */}
-                <AnimatePresence>
+                < AnimatePresence >
                     {isAdding && (
                         <motion.div
                             initial={{ height: 0, opacity: 0 }}
@@ -292,84 +324,86 @@ export default function Admin() {
                 </AnimatePresence>
 
                 {/* Config Panel (Collapsible) */}
-                {showSettings && (
-                    <div className="max-w-7xl mx-auto mt-2 sm:mt-3 lg:mt-4 p-3 sm:p-4 lg:p-6 bg-slate-900/90 rounded-2xl border border-white/10 shadow-2xl backdrop-blur-md transition-all duration-300">
-                        <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3 sm:gap-4 lg:gap-8">
-                            <div className="flex flex-col gap-2 w-full lg:w-auto">
-                                <label className="text-xs sm:text-sm font-bold text-slate-400">יחידות בעמוד</label>
-                                <div className="flex items-center gap-3 bg-slate-950 p-1 rounded-lg border border-white/5 w-full sm:w-fit">
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        max="50"
-                                        value={config.pageSize || 10}
-                                        onChange={(e) => updateConfig({ pageSize: parseInt(e.target.value) || 10 })}
-                                        className="w-16 px-3 py-1 bg-transparent text-center font-mono font-bold focus:outline-none text-sm sm:text-base"
-                                    />
+                {
+                    showSettings && (
+                        <div className="max-w-7xl mx-auto mt-2 sm:mt-3 lg:mt-4 p-3 sm:p-4 lg:p-6 bg-slate-900/90 rounded-2xl border border-white/10 shadow-2xl backdrop-blur-md transition-all duration-300">
+                            <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3 sm:gap-4 lg:gap-8">
+                                <div className="flex flex-col gap-2 w-full lg:w-auto">
+                                    <label className="text-xs sm:text-sm font-bold text-slate-400">יחידות בעמוד</label>
+                                    <div className="flex items-center gap-3 bg-slate-950 p-1 rounded-lg border border-white/5 w-full sm:w-fit">
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max="50"
+                                            value={config.pageSize || 10}
+                                            onChange={(e) => updateConfig({ pageSize: parseInt(e.target.value) || 10 })}
+                                            className="w-16 px-3 py-1 bg-transparent text-center font-mono font-bold focus:outline-none text-sm sm:text-base"
+                                        />
+                                    </div>
                                 </div>
-                            </div>
 
-                            {/* Removed "מספר דוכנים" - now calculated from availableBooths */}
+                                {/* Removed "מספר דוכנים" - now calculated from availableBooths */}
 
-                            <div className="flex flex-col gap-2 w-full lg:w-auto">
-                                <label className="text-xs sm:text-sm font-bold text-slate-400">הצג יחידות עם 0</label>
-                                <div className="flex items-center gap-3 bg-slate-950 p-2 rounded-lg border border-white/5 w-full sm:w-fit h-[42px]">
-                                    <input
-                                        type="checkbox"
-                                        checked={config.showZero ?? true}
-                                        onChange={(e) => updateConfig({ showZero: e.target.checked })}
-                                        className="w-5 h-5 accent-cyan-500 cursor-pointer"
-                                    />
+                                <div className="flex flex-col gap-2 w-full lg:w-auto">
+                                    <label className="text-xs sm:text-sm font-bold text-slate-400">הצג יחידות עם 0</label>
+                                    <div className="flex items-center gap-3 bg-slate-950 p-2 rounded-lg border border-white/5 w-full sm:w-fit h-[42px]">
+                                        <input
+                                            type="checkbox"
+                                            checked={config.showZero ?? true}
+                                            onChange={(e) => updateConfig({ showZero: e.target.checked })}
+                                            className="w-5 h-5 accent-cyan-500 cursor-pointer"
+                                        />
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="h-px lg:h-10 w-full lg:w-px bg-white/10" />
+                                <div className="h-px lg:h-10 w-full lg:w-px bg-white/10" />
 
-                            <div className="flex flex-col gap-2 w-full lg:w-auto">
-                                <label className="text-xs sm:text-sm font-bold text-slate-400">סוג אחסון</label>
-                                <div className="flex items-center gap-2 bg-slate-950 p-1 rounded-lg border border-white/5 w-full sm:w-fit">
-                                    <button
-                                        onClick={() => updateConfig({ storageType: 'localStorage' })}
-                                        className={clsx(
-                                            "px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap",
-                                            config.storageType === 'localStorage' || !config.storageType
-                                                ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/50"
-                                                : "bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-white border border-transparent"
-                                        )}
-                                    >
-                                        LocalStorage
-                                    </button>
-                                    <button
-                                        onClick={() => updateConfig({ storageType: 'firebase' })}
-                                        className={clsx(
-                                            "px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap",
-                                            config.storageType === 'firebase'
-                                                ? "bg-orange-500/20 text-orange-400 border border-orange-500/50"
-                                                : "bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-white border border-transparent"
-                                        )}
-                                    >
-                                        Firebase
-                                    </button>
+                                <div className="flex flex-col gap-2 w-full lg:w-auto">
+                                    <label className="text-xs sm:text-sm font-bold text-slate-400">סוג אחסון</label>
+                                    <div className="flex items-center gap-2 bg-slate-950 p-1 rounded-lg border border-white/5 w-full sm:w-fit">
+                                        <button
+                                            onClick={() => updateConfig({ storageType: 'localStorage' })}
+                                            className={clsx(
+                                                "px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap",
+                                                config.storageType === 'localStorage' || !config.storageType
+                                                    ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/50"
+                                                    : "bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-white border border-transparent"
+                                            )}
+                                        >
+                                            LocalStorage
+                                        </button>
+                                        <button
+                                            onClick={() => updateConfig({ storageType: 'firebase' })}
+                                            className={clsx(
+                                                "px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap",
+                                                config.storageType === 'firebase'
+                                                    ? "bg-orange-500/20 text-orange-400 border border-orange-500/50"
+                                                    : "bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-white border border-transparent"
+                                            )}
+                                        >
+                                            Firebase
+                                        </button>
+                                    </div>
                                 </div>
+
+                                <div className="h-px lg:h-10 w-full lg:w-px bg-white/10" />
+
+                                <button
+                                    onClick={() => setSearchTerm("")}
+                                    disabled={!searchTerm}
+                                    className="flex items-center justify-center gap-2 text-slate-400 hover:text-white px-3 sm:px-4 py-2 rounded-xl transition-colors border border-transparent hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed w-full sm:w-auto text-sm"
+                                >
+                                    <X size={16} className="sm:w-[18px] sm:h-[18px]" />
+                                    <span className="font-bold">ניקוי סינון</span>
+                                </button>
                             </div>
-
-                            <div className="h-px lg:h-10 w-full lg:w-px bg-white/10" />
-
-                            <button
-                                onClick={() => setSearchTerm("")}
-                                disabled={!searchTerm}
-                                className="flex items-center justify-center gap-2 text-slate-400 hover:text-white px-3 sm:px-4 py-2 rounded-xl transition-colors border border-transparent hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed w-full sm:w-auto text-sm"
-                            >
-                                <X size={16} className="sm:w-[18px] sm:h-[18px]" />
-                                <span className="font-bold">ניקוי סינון</span>
-                            </button>
                         </div>
-                    </div>
-                )}
-            </header>
+                    )
+                }
+            </header >
 
             {/* Main Content Area */}
-            <div className="flex-1 overflow-auto p-2 sm:p-3 lg:p-4 xl:p-8 custom-scrollbar relative z-10">
+            < div className="flex-1 overflow-auto p-2 sm:p-3 lg:p-4 xl:p-8 custom-scrollbar relative z-10" >
                 <div className="max-w-7xl mx-auto">
 
                     {filteredUnits.length === 0 ? (
@@ -394,23 +428,27 @@ export default function Admin() {
                                     removeBoothFromUnit={removeBoothFromUnit}
                                     setEditingId={setEditingId}
                                     availableBooths={config.availableBooths || []}
+                                    availableLogos={logos}
+                                    getUnitLogo={getUnitLogo}
                                 />
                             ))}
                         </div>
                     )}
                 </div>
-            </div>
+            </div >
 
             {/* Confirmation Modal */}
-            {modalState.show && (
-                <ConfirmModal
-                    type={modalState.type}
-                    unitName={modalState.unitName}
-                    onConfirm={handleModalConfirm}
-                    onCancel={handleModalCancel}
-                />
-            )}
-        </div>
+            {
+                modalState.show && (
+                    <ConfirmModal
+                        type={modalState.type}
+                        unitName={modalState.unitName}
+                        onConfirm={handleModalConfirm}
+                        onCancel={handleModalCancel}
+                    />
+                )
+            }
+        </div >
     );
 }
 
@@ -485,8 +523,8 @@ function LoginScreen({ passwordInput, setPasswordInput, handlePasswordSubmit, pa
     25 % { transform: translateX(-10px); }
     75 % { transform: translateX(10px); }
 }
-                .animate - shake {
-    animation: shake 0.4s ease -in -out;
+                .animate-shake {
+    animation: shake 0.4s ease-in-out;
 }
 `}</style>
         </div>
@@ -505,7 +543,6 @@ function StatBadge({ label, value, color }) {
 
 function ConfirmModal({ type, unitName, onConfirm, onCancel }) {
     const isReset = type === 'reset';
-    const isRemove = type === 'remove';
 
     return (
         <div
@@ -525,8 +562,8 @@ function ConfirmModal({ type, unitName, onConfirm, onCancel }) {
 
                 {/* Icon */}
                 <div className="flex justify-center mb-4">
-                    <div className={`p - 4 rounded - 2xl ${isReset ? 'bg-rose-500/20' : 'bg-rose-500/20'} `}>
-                        <AlertTriangle className={`w - 8 h - 8 ${isReset ? 'text-rose-400' : 'text-rose-400'} `} />
+                    <div className="p-4 rounded-2xl bg-rose-500/20">
+                        <AlertTriangle className="w-8 h-8 text-rose-400" />
                     </div>
                 </div>
 
@@ -574,7 +611,7 @@ function ConfirmModal({ type, unitName, onConfirm, onCancel }) {
     );
 }
 
-function AdminUnitCard({ unit, editingId, editForm, setEditForm, handleLogoUpload, handleSaveEdit, handleEditClick, handleRemoveClick, addBoothToUnit, removeBoothFromUnit, setEditingId, availableBooths }) {
+function AdminUnitCard({ unit, editingId, editForm, setEditForm, handleLogoUpload, handleSaveEdit, handleEditClick, handleRemoveClick, addBoothToUnit, removeBoothFromUnit, setEditingId, availableBooths, availableLogos, getUnitLogo }) {
     const isEditing = editingId === unit.id;
 
     // Check if booth is assigned to this unit
@@ -602,22 +639,30 @@ function AdminUnitCard({ unit, editingId, editForm, setEditForm, handleLogoUploa
                 {/* Logo/Avatar */}
                 <div className="relative shrink-0">
                     {isEditing ? (
-                        <label className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-slate-900 flex items-center justify-center cursor-pointer border border-dashed border-slate-600 hover:border-cyan-400 group/upload transition-colors overflow-hidden touch-manipulation">
-                            {editForm.logo ? (
-                                <img src={editForm.logo} className="w-full h-full object-cover opacity-50 group-hover/upload:opacity-100" />
-                            ) : (
-                                <Upload size={16} className="sm:w-[18px] sm:h-[18px] text-slate-400 group-hover/upload:text-cyan-400" />
-                            )}
-                            <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
-                        </label>
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-slate-900 flex items-center justify-center overflow-hidden border border-cyan-500/30">
+                            {(() => {
+                                const logoSrc = editForm.logoId
+                                    ? availableLogos?.find(l => l.id === editForm.logoId)?.data
+                                    : editForm.logo;
+
+                                if (logoSrc) {
+                                    return <img src={logoSrc} className="w-full h-full object-contain p-1" />;
+                                }
+                                return <ImageIcon size={20} className="text-slate-600" />;
+                            })()}
+                        </div>
                     ) : (
-                        unit.logo ? (
-                            <img src={unit.logo} className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl object-cover shadow-sm bg-white" />
-                        ) : (
-                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center font-bold text-slate-400 border border-white/5 text-base sm:text-lg">
-                                {unit.name.charAt(0)}
-                            </div>
-                        )
+                        (() => {
+                            const logoSrc = getUnitLogo(unit);
+                            if (logoSrc) {
+                                return <img src={logoSrc} className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl object-contain shadow-sm bg-white p-0.5" />;
+                            }
+                            return (
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center font-bold text-slate-400 border border-white/5 text-base sm:text-lg">
+                                    {unit.name.charAt(0)}
+                                </div>
+                            );
+                        })()
                     )}
                 </div>
 
@@ -625,17 +670,50 @@ function AdminUnitCard({ unit, editingId, editForm, setEditForm, handleLogoUploa
                 <div className="flex-1 min-w-0">
                     {isEditing ? (
                         <div className="flex flex-col gap-2">
-                            <input
-                                autoFocus
-                                type="text"
-                                value={editForm.name}
-                                onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleSaveEdit();
-                                }}
-                                className="bg-slate-900/50 text-white px-2 py-1 rounded border border-cyan-500/50 outline-none w-full font-bold text-xs sm:text-sm lg:text-base"
-                            />
-                            <div className="flex gap-2 mt-1">
+                            <div className="relative">
+                                {/* Logo Selection or Upload */}
+                                <div className="flex gap-2 mb-2 overflow-x-auto pb-1 custom-scrollbar snap-x">
+                                    {(availableLogos || []).map(l => (
+                                        <button
+                                            key={l.id}
+                                            onClick={() => setEditForm(prev => ({ ...prev, logoId: l.id, logo: null }))}
+                                            className={clsx(
+                                                "w-10 h-10 shrink-0 rounded-lg border-2 p-1 transition-all snap-start",
+                                                editForm.logoId === l.id
+                                                    ? "border-cyan-500 bg-cyan-500/20"
+                                                    : "border-white/10 bg-slate-900/50 hover:border-white/30"
+                                            )}
+                                        >
+                                            <img src={l.data} className="w-full h-full object-contain" title={l.name} />
+                                        </button>
+                                    ))}
+                                    {/* Option to clear */}
+                                    <button
+                                        onClick={() => setEditForm(prev => ({ ...prev, logoId: null, logo: null }))}
+                                        className={clsx(
+                                            "w-10 h-10 shrink-0 rounded-lg border-2 p-1 transition-all flex items-center justify-center text-slate-500",
+                                            !editForm.logoId && !editForm.logo ? "border-cyan-500 bg-cyan-500/20 text-cyan-400" : "border-white/10"
+                                        )}
+                                        title="ללא לוגו"
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                </div>
+
+                                <input
+                                    autoFocus
+                                    type="text"
+                                    value={editForm.name}
+                                    onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') handleSaveEdit();
+                                    }}
+                                    className="bg-slate-900/50 text-white px-2 py-1.5 rounded-xl border border-cyan-500/50 outline-none w-full font-bold text-xs sm:text-sm lg:text-base mb-1"
+                                    placeholder="שם היחידה"
+                                />
+                            </div>
+
+                            <div className="flex gap-2">
                                 <button onClick={handleSaveEdit} className="flex-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 py-1.5 rounded-lg text-[10px] sm:text-xs font-bold transition-colors flex items-center justify-center gap-1 touch-manipulation">
                                     <Save size={12} /> שמירה
                                 </button>

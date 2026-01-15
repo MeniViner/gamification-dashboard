@@ -72,7 +72,7 @@ function createBoothsGradientVertical(unit, availableBooths) {
 
 
 export default function Dashboard() {
-    const { units, config, refreshData } = useConferenceData();
+    const { units, config, refreshData, getUnitLogo } = useConferenceData();
     const [page, setPage] = useState(0);
     const [currentTime, setCurrentTime] = useState(new Date());
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -441,10 +441,18 @@ function StatCard({ icon: Icon, label, value, color }) {
 }
 
 function UnitLogo({ unit, className }) {
-    if (unit.logo) {
+    const { getUnitLogo } = useConferenceData();
+
+    // We can use the hook here, as long as this component isn't inside a tight loop that creates new hook instances every render (which it isn't).
+    // However, if we want to avoid re-renders, passing it as a prop is better.
+    // Given the previous attempt failed, let's just use the hook for simplicity and correctness now.
+
+    const logoSrc = getUnitLogo(unit);
+
+    if (logoSrc) {
         return (
             <img
-                src={unit.logo}
+                src={logoSrc}
                 alt={unit.name}
                 className={clsx("rounded-full border-2 border-slate-600/50 shadow-lg object-cover bg-white", className)}
             />
