@@ -175,19 +175,19 @@ export default function Dashboard() {
             </div>
 
             {/* Right Sidebar: Stats & Credits */}
-            <aside className="w-full lg:w-72 flex flex-col gap-3 lg:gap-4 shrink-0 z-20 order-1 lg:order-none">
+            <aside className="w-full lg:w-64 flex flex-col gap-2 lg:gap-3 shrink-0 z-20 order-1 lg:order-none">
 
                 {/* Top: Stats (75%) */}
-                <div className="flex-[3] grid grid-cols-2 lg:flex lg:flex-col gap-3 lg:gap-6 bg-slate-800/40 rounded-2xl lg:rounded-3xl p-4 lg:p-8 border border-cyan-400/20 backdrop-blur-xl shadow-[0_0_60px_rgba(6,182,212,0.3)] relative overflow-hidden">
+                <div className="flex-[3] grid grid-cols-2 lg:flex lg:flex-col gap-2 lg:gap-4 bg-slate-800/40 rounded-2xl lg:rounded-3xl p-3 lg:p-5 border border-cyan-400/20 backdrop-blur-xl shadow-[0_0_60px_rgba(6,182,212,0.3)] relative overflow-hidden">
                     {/* Inner glow effect */}
                     <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5 rounded-3xl pointer-events-none" />
                     <div className="absolute -inset-1 bg-gradient-to-r from-cyan-400/0 via-cyan-400/20 to-cyan-400/0 rounded-3xl blur-2xl opacity-50 pointer-events-none" />
 
-                    <div className="text-center mb-2 col-span-2 relative z-10">
-                        <h2 className="text-xl lg:text-3xl font-black text-white drop-shadow-[0_0_20px_rgba(6,182,212,0.8)]">
+                    <div className="text-center mb-1 col-span-2 relative z-10">
+                        <h2 className="text-xl lg:text-2xl font-black text-white drop-shadow-[0_0_20px_rgba(6,182,212,0.8)]">
                             לוח תוצאות
                         </h2>
-                        <div className="w-12 h-1 bg-cyan-400 mx-auto mt-2 lg:mt-4 rounded-full shadow-[0_0_20px_rgba(6,182,212,0.8)]" />
+                        <div className="w-12 h-1 bg-cyan-400 mx-auto mt-1 lg:mt-2 rounded-full shadow-[0_0_20px_rgba(6,182,212,0.8)]" />
                     </div>
 
                     <StatCard icon={Users} label="סה״כ יחידות" value={units.length} color="from-blue-400 to-blue-600" />
@@ -266,7 +266,7 @@ export default function Dashboard() {
                 </section>
 
                 {/* Left: Carousel (Rank 4-40) */}
-                <section className="flex-[3] flex flex-col bg-slate-800/20 rounded-2xl lg:rounded-3xl p-4 lg:p-8 border border-cyan-400/20 backdrop-blur-md overflow-hidden relative shadow-[0_0_60px_rgba(6,182,212,0.25)]">
+                <section className="flex-[3] flex flex-col bg-slate-800/20 rounded-2xl lg:rounded-3xl p-4 lg:py-8 lg:px-4 border border-cyan-400/20 backdrop-blur-md overflow-hidden relative shadow-[0_0_60px_rgba(6,182,212,0.25)]">
                     {/* Inner glow effects */}
                     <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/8 via-blue-400/5 to-sky-400/8 rounded-3xl pointer-events-none" />
                     <div className="absolute -inset-1 bg-gradient-to-r from-cyan-400/15 via-blue-400/15 to-purple-400/15 rounded-3xl blur-2xl opacity-40 pointer-events-none" />
@@ -572,7 +572,7 @@ function RankRow({ unit, availableBooths }) {
     return (
         <motion.div
             layoutId={`row-${unit.id}`}
-            className="flex items-center gap-2 lg:gap-4 p-2 lg:p-3 bg-slate-900/30 rounded-xl border border-cyan-400/10 hover:bg-slate-900/50 hover:border-cyan-400/30 hover:shadow-[0_0_25px_rgba(6,182,212,0.25)] transition-all group relative overflow-hidden"
+            className="flex items-center gap-2 lg:gap-4 py-2 lg:py-3 transition-all group relative overflow-hidden"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
@@ -585,7 +585,7 @@ function RankRow({ unit, availableBooths }) {
 
             <ScrollingText
                 text={unit.name}
-                className="w-20 lg:w-32 font-bold text-slate-200 group-hover:text-white transition-colors text-sm lg:text-lg"
+                className="w-28 lg:w-28 font-bold text-slate-200 group-hover:text-white transition-colors text-sm lg:text-lg"
             />
 
             {/* Bar */}
@@ -602,7 +602,7 @@ function RankRow({ unit, availableBooths }) {
                 </motion.div>
             </div>
 
-            <div className="w-10 lg:w-12 font-mono font-black text-white text-right text-base lg:text-xl drop-shadow-sm">
+            <div className="w-10 lg:w-6 font-mono font-black text-white text-right text-base lg:text-xl drop-shadow-sm">
                 {unitBooths}
             </div>
         </motion.div>
