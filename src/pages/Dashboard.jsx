@@ -107,7 +107,7 @@ export default function Dashboard() {
         if (hasLockedPositions) {
             // Use locked positions
             return lockedTop3.map((unitId, index) => {
-                if (unitId === null) {
+                if (unitId === null || unitId === undefined) {
                     // Empty slot - show placeholder
                     return {
                         id: `placeholder-${index + 1}`,
@@ -117,10 +117,18 @@ export default function Dashboard() {
                         isLocked: false
                     };
                 }
-                // Find the locked unit
-                const unit = units.find(u => u.id === unitId);
+
+                // Normalize unitId: trim whitespace and convert to number
+                // Firebase might store IDs as strings like "71 " or "49"
+                const normalizedId = typeof unitId === 'string'
+                    ? parseInt(unitId.trim(), 10)
+                    : unitId;
+
+                // Find the locked unit by normalized ID
+                const unit = units.find(u => u.id === normalizedId);
                 if (!unit) {
                     // Unit not found (shouldn't happen, but handle it)
+                    console.warn(`Locked unit with ID ${unitId} (normalized: ${normalizedId}) not found in units list`);
                     return {
                         id: `placeholder-${index + 1}`,
                         name: '',
@@ -364,9 +372,13 @@ export default function Dashboard() {
                                 className="w-full h-full flex flex-col gap-3"
                             >
                                 <LayoutGroup id={`batch-${page}`}>
-                                    {currentBatch.map((unit) => (
-                                        <RankRow key={unit.id} unit={unit} availableBooths={availableBooths} />
-                                    ))}
+                                    {currentBatch.map((unit, index) => {
+                                        // Calculate the actual rank position in the full sorted list
+                                        const rank = rest.findIndex(u => u.id === unit.id) + 1;
+                                        return (
+                                            <RankRow key={unit.id} unit={unit} rank={rank} availableBooths={availableBooths} />
+                                        );
+                                    })}
                                 </LayoutGroup>
                             </motion.div>
                         </AnimatePresence>
@@ -572,11 +584,11 @@ function PodiumBar({ unit, rank, color, height, delay, availableBooths }) {
             {!isPlaceholder && (
                 <div className="mb-2 lg:mb-4 text-center flex flex-col items-center gap-1 lg:gap-2 relative">
                     {/* Lock indicator for locked positions */}
-                    {unit.isLocked && (
+                    {/* {unit.isLocked && (
                         <div className="absolute -top-1 -right-1 lg:-top-2 lg:-right-2 bg-yellow-500 rounded-full p-1 lg:p-1.5 shadow-lg ring-2 ring-yellow-400/50 z-20">
                             <span className="text-xs lg:text-sm">🔒</span>
                         </div>
-                    )}
+                    )} */}
                     <UnitLogo unit={unit} className="w-10 h-10 lg:w-14 lg:h-14 ring-2 lg:ring-4 ring-black/20" />
                     <motion.div
                         className="text-xs lg:text-sm font-bold text-slate-200 bg-slate-900/60 px-2 lg:px-3 py-0.5 lg:py-1 rounded-full border border-white/10 backdrop-blur-sm mt-0.5 lg:mt-1 shadow-lg whitespace-nowrap"
@@ -656,7 +668,7 @@ function ScrollingText({ text, className }) {
     );
 }
 
-function RankRow({ unit, availableBooths }) {
+function RankRow({ unit, rank, availableBooths }) {
     const totalBooths = availableBooths.length;
     const unitBooths = unit.booths?.length || 0;
     const barWidth = `${Math.min(100, (unitBooths / Math.max(totalBooths, 1)) * 100)}%`;
@@ -671,7 +683,7 @@ function RankRow({ unit, availableBooths }) {
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
         >
             <div className="w-6 lg:w-8 font-mono text-slate-500 text-xs lg:text-sm font-bold text-center group-hover:text-cyan-400 transition-colors">
-                #{unit.id}
+                #{rank}
             </div>
 
             <UnitLogo unit={unit} className="w-8 h-8 lg:w-10 lg:h-10 shrink-0" />
