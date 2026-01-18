@@ -132,7 +132,14 @@ export default function Dashboard() {
         // If showZero is disabled, only return units with scores
         return actualTop3;
     }, [sortedUnits, config.showZero]);
-    const rest = useMemo(() => sortedUnits.slice(3), [sortedUnits]);
+
+    // Filter out units that are actually displayed in top 3 (not placeholders)
+    const rest = useMemo(() => {
+        const top3Ids = top3
+            .filter(unit => !unit.isPlaceholder)
+            .map(unit => unit.id);
+        return sortedUnits.filter(unit => !top3Ids.includes(unit.id));
+    }, [sortedUnits, top3]);
     const totalPages = Math.ceil(rest.length / PAGE_SIZE) || 1;
 
     // Auto-rotate pages
