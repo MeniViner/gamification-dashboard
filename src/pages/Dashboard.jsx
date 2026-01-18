@@ -337,14 +337,14 @@ export default function Dashboard() {
 
                     <div className="flex-1 flex items-end justify-center gap-3 lg:gap-6 pb-4 lg:pb-8">
                         <LayoutGroup id="podium">
-                            {/* Silver (2nd) */}
-                            {top3[1] && <PodiumBar unit={top3[1]} rank={2} color="from-slate-300 via-slate-400 to-slate-500" height="60%" delay={0.2} availableBooths={availableBooths} />}
-
-                            {/* Gold (1st) */}
+                            {/* Gold (1st) - Right */}
                             {top3[0] && <PodiumBar unit={top3[0]} rank={1} color="from-yellow-300 via-yellow-500 to-yellow-600" height="85%" delay={0} availableBooths={availableBooths} />}
 
-                            {/* Bronze (3rd) */}
-                            {top3[2] && <PodiumBar unit={top3[2]} rank={3} color="from-orange-300 via-orange-400 to-orange-500" height="45%" delay={0.4} availableBooths={availableBooths} />}
+                            {/* Silver (2nd) - Middle */}
+                            {top3[1] && <PodiumBar unit={top3[1]} rank={2} color="from-slate-300 via-slate-400 to-slate-500" height="85%" delay={0.2} availableBooths={availableBooths} />}
+
+                            {/* Bronze (3rd) - Left */}
+                            {top3[2] && <PodiumBar unit={top3[2]} rank={3} color="from-orange-300 via-orange-400 to-orange-500" height="85%" delay={0.4} availableBooths={availableBooths} />}
                         </LayoutGroup>
                     </div>
                 </section>
@@ -574,22 +574,42 @@ function PodiumBar({ unit, rank, color, height, delay, availableBooths }) {
     // Check if this is a placeholder
     const isPlaceholder = unit.isPlaceholder === true;
 
+    // Different glow colors for each rank
+    const rankGlowColors = {
+        1: 'rgba(250, 204, 21, 0.6)',  // Gold glow
+        2: 'rgba(203, 213, 225, 0.5)',  // Silver glow
+        3: 'rgba(251, 146, 60, 0.5)'    // Bronze glow
+    };
+
     return (
         <motion.div
             layoutId={`unit-${unit.id}`}
-            className="flex flex-col items-center justify-end w-1/3 max-w-[100px] relative z-10"
+            className="flex flex-col items-center justify-end w-1/3 max-w-[100px] relative z-10 group"
             style={{ height: "100%" }}
             transition={{ type: "spring", stiffness: 60, damping: 15 }}
         >
             {!isPlaceholder && (
                 <div className="mb-2 lg:mb-4 text-center flex flex-col items-center gap-1 lg:gap-2 relative">
-                    {/* Lock indicator for locked positions */}
-                    {/* {unit.isLocked && (
-                        <div className="absolute -top-1 -right-1 lg:-top-2 lg:-right-2 bg-yellow-500 rounded-full p-1 lg:p-1.5 shadow-lg ring-2 ring-yellow-400/50 z-20">
-                            <span className="text-xs lg:text-sm">🔒</span>
-                        </div>
-                    )} */}
-                    <UnitLogo unit={unit} className="w-10 h-10 lg:w-14 lg:h-14 ring-2 lg:ring-4 ring-black/20" />
+                    {/* Animated ring around logo */}
+                    <div className="relative">
+                        <motion.div
+                            className="absolute inset-0 rounded-full"
+                            animate={{
+                                boxShadow: [
+                                    `0 0 20px ${rankGlowColors[rank]}`,
+                                    `0 0 40px ${rankGlowColors[rank]}`,
+                                    `0 0 20px ${rankGlowColors[rank]}`
+                                ]
+                            }}
+                            transition={{
+                                duration: 2,
+                                repeat: Infinity,
+                                ease: "easeInOut"
+                            }}
+                        />
+                        <UnitLogo unit={unit} className="w-10 h-10 lg:w-14 lg:h-14 ring-2 lg:ring-4 ring-black/20 relative z-10" />
+                    </div>
+
                     <motion.div
                         className="text-xs lg:text-sm font-bold text-slate-200 bg-slate-900/60 px-2 lg:px-3 py-0.5 lg:py-1 rounded-full border border-white/10 backdrop-blur-sm mt-0.5 lg:mt-1 shadow-lg whitespace-nowrap"
                         layout
@@ -602,32 +622,169 @@ function PodiumBar({ unit, rank, color, height, delay, availableBooths }) {
 
             {/* Podium Pillar Container (Track) */}
             <motion.div
-                className="w-full rounded-t-2xl relative shadow-[0_0_40px_rgba(6,182,212,0.4)] border-x border-t border-cyan-400/30 overflow-hidden bg-slate-900/60 backdrop-blur-sm"
+                className="w-full rounded-t-2xl relative overflow-hidden bg-slate-900/60 backdrop-blur-sm border-x border-t border-cyan-400/30"
                 initial={{ height: 0 }}
                 animate={{ height }}
                 transition={{ type: "spring", stiffness: 50, damping: 15 }}
+                style={{
+                    boxShadow: `0 0 40px ${rankGlowColors[rank]}, 0 0 80px ${rankGlowColors[rank].replace('0.6', '0.3').replace('0.5', '0.25')}`
+                }}
             >
-                {/* Background Track Pattern/Glow */}
+                {/* Animated Background Layers */}
+                <div className="absolute inset-0">
+                    {/* Base gradient layer with breathing animation */}
+                    <motion.div
+                        className={`absolute inset-0 bg-gradient-to-br ${color} opacity-20`}
+                        animate={{
+                            opacity: [0.15, 0.25, 0.15]
+                        }}
+                        transition={{
+                            duration: 3,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                            delay: delay
+                        }}
+                    />
+
+                    {/* Animated gradient overlay */}
+                    <motion.div
+                        className={`absolute inset-0 bg-gradient-to-t ${color} opacity-10`}
+                        animate={{
+                            opacity: [0.05, 0.15, 0.05]
+                        }}
+                        transition={{
+                            duration: 2.5,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                            delay: delay + 0.5
+                        }}
+                    />
+
+                    {/* Moving shimmer effect */}
+                    <motion.div
+                        className="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-transparent"
+                        animate={{
+                            y: ["-100%", "200%"]
+                        }}
+                        transition={{
+                            duration: 4,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                            delay: delay
+                        }}
+                    />
+                </div>
+
+                {/* Noise texture */}
                 <div className="absolute inset-0 bg-[url('/noise.png')] opacity-5 mix-blend-overlay" />
 
-                {/* Progress Bar (Fill) */}
+                {/* Progress Bar (Fill) with enhanced gradient */}
                 <motion.div
-                    className="absolute bottom-0 left-0 right-0 w-full"
+                    className="absolute bottom-0 left-0 right-0 w-full overflow-hidden"
                     style={{ background: gradient }}
                     initial={{ height: 0 }}
                     animate={{ height: `${progressPercent}%` }}
                     transition={{ type: "spring", stiffness: 40, damping: 20, delay: 0.2 }}
                 >
-                    {/* Top shine for the fill */}
-                    <div className="absolute top-0 left-0 right-0 h-[1px] bg-white/50 shadow-[0_0_10px_white]" />
+                    {/* Animated overlay on progress bar */}
+                    <motion.div
+                        className="absolute inset-0 bg-gradient-to-t from-white/20 via-transparent to-transparent"
+                        animate={{
+                            opacity: [0.3, 0.6, 0.3]
+                        }}
+                        transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                        }}
+                    />
+
+                    {/* Top shine for the fill with pulse */}
+                    <motion.div
+                        className="absolute top-0 left-0 right-0 h-[2px] bg-white shadow-[0_0_10px_white]"
+                        animate={{
+                            opacity: [0.5, 1, 0.5],
+                            boxShadow: [
+                                "0 0 10px rgba(255,255,255,0.5)",
+                                "0 0 20px rgba(255,255,255,1)",
+                                "0 0 10px rgba(255,255,255,0.5)"
+                            ]
+                        }}
+                        transition={{
+                            duration: 1.5,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                        }}
+                    />
+
+                    {/* Particles effect */}
+                    <div className="absolute inset-0">
+                        {[...Array(3)].map((_, i) => (
+                            <motion.div
+                                key={i}
+                                className="absolute w-1 h-1 bg-white/40 rounded-full"
+                                style={{
+                                    left: `${20 + i * 30}%`,
+                                    bottom: "10%"
+                                }}
+                                animate={{
+                                    y: [0, -20, 0],
+                                    opacity: [0, 1, 0]
+                                }}
+                                transition={{
+                                    duration: 2 + i * 0.5,
+                                    repeat: Infinity,
+                                    ease: "easeInOut",
+                                    delay: i * 0.3
+                                }}
+                            />
+                        ))}
+                    </div>
                 </motion.div>
 
-                <div className="absolute top-2 lg:top-4 w-full text-center font-black text-white text-3xl lg:text-5xl drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] opacity-40 mix-blend-overlay z-20 pointer-events-none">
+                {/* Rank number with enhanced glow */}
+                <motion.div
+                    className="absolute top-2 lg:top-4 w-full text-center font-black text-3xl lg:text-5xl opacity-70 z-20 pointer-events-none"
+                    style={{
+                        color: rank === 1 ? '#FBBF24' : rank === 2 ? '#C0C0C0' : '#FB923C',
+                        textShadow: rank === 1
+                            ? '0 0 20px rgba(251, 191, 36, 0.8), 0 0 40px rgba(251, 191, 36, 0.6)'
+                            : rank === 2
+                                ? '0 0 20px rgba(192, 192, 192, 0.9), 0 0 40px rgba(192, 192, 192, 0.7)'
+                                : '0 0 20px rgba(251, 146, 60, 0.8), 0 0 40px rgba(251, 146, 60, 0.6)'
+                    }}
+                    animate={{
+                        textShadow: rank === 1
+                            ? [
+                                "0 0 20px rgba(251, 191, 36, 0.8), 0 0 40px rgba(251, 191, 36, 0.6)",
+                                "0 0 30px rgba(251, 191, 36, 1), 0 0 60px rgba(251, 191, 36, 0.8)",
+                                "0 0 20px rgba(251, 191, 36, 0.8), 0 0 40px rgba(251, 191, 36, 0.6)"
+                            ]
+                            : rank === 2
+                                ? [
+                                    "0 0 20px rgba(192, 192, 192, 0.9), 0 0 40px rgba(192, 192, 192, 0.7)",
+                                    "0 0 30px rgba(192, 192, 192, 1), 0 0 60px rgba(192, 192, 192, 0.9)",
+                                    "0 0 20px rgba(192, 192, 192, 0.9), 0 0 40px rgba(192, 192, 192, 0.7)"
+                                ]
+                                : [
+                                    "0 0 20px rgba(251, 146, 60, 0.8), 0 0 40px rgba(251, 146, 60, 0.6)",
+                                    "0 0 30px rgba(251, 146, 60, 1), 0 0 60px rgba(251, 146, 60, 0.8)",
+                                    "0 0 20px rgba(251, 146, 60, 0.8), 0 0 40px rgba(251, 146, 60, 0.6)"
+                                ]
+                    }}
+                    transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                    }}
+                >
                     {rank}
-                </div>
+                </motion.div>
 
-                {/* Enhanced Hover Glow effect (on the whole pillar) */}
-                <div className="absolute inset-0 bg-gradient-to-t from-cyan-400/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                {/* Enhanced Hover Glow effect */}
+                <motion.div
+                    className={`absolute inset-0 bg-gradient-to-t ${color} opacity-0 group-hover:opacity-30 transition-opacity pointer-events-none`}
+                />
             </motion.div>
 
             <div className="mt-1 lg:mt-3 font-bold text-slate-400 text-xs lg:text-sm tracking-widest">מקום {rank}</div>
