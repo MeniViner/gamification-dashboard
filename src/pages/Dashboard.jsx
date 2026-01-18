@@ -99,21 +99,58 @@ export default function Dashboard() {
 
     // Create placeholder podium data when showZero is enabled and everyone is at 0
     const top3 = useMemo(() => {
-        // Check if anyone has any booths
+        const lockedTop3 = config.lockedTop3 || [null, null, null];
+
+        // Check if we have any locked positions
+        const hasLockedPositions = lockedTop3.some(id => id !== null);
+
+        if (hasLockedPositions) {
+            // Use locked positions
+            return lockedTop3.map((unitId, index) => {
+                if (unitId === null) {
+                    // Empty slot - show placeholder
+                    return {
+                        id: `placeholder-${index + 1}`,
+                        name: '',
+                        booths: [],
+                        isPlaceholder: true,
+                        isLocked: false
+                    };
+                }
+                // Find the locked unit
+                const unit = units.find(u => u.id === unitId);
+                if (!unit) {
+                    // Unit not found (shouldn't happen, but handle it)
+                    return {
+                        id: `placeholder-${index + 1}`,
+                        name: '',
+                        booths: [],
+                        isPlaceholder: true,
+                        isLocked: false
+                    };
+                }
+                return {
+                    ...unit,
+                    isLocked: true // Mark as locked for visual indicator
+                };
+            });
+        }
+
+        // Fallback to dynamic top 3 (original logic when nothing is locked)
         const hasAnyScore = sortedUnits.some(u => u.booths && u.booths.length > 0);
 
         // If showZero is enabled and NO ONE has any booths yet, create placeholders for visual appeal
         if (config.showZero !== false && !hasAnyScore) {
             return [
-                { id: 'placeholder-1', name: '', booths: [], isPlaceholder: true },
-                { id: 'placeholder-2', name: '', booths: [], isPlaceholder: true },
-                { id: 'placeholder-3', name: '', booths: [], isPlaceholder: true }
+                { id: 'placeholder-1', name: '', booths: [], isPlaceholder: true, isLocked: false },
+                { id: 'placeholder-2', name: '', booths: [], isPlaceholder: true, isLocked: false },
+                { id: 'placeholder-3', name: '', booths: [], isPlaceholder: true, isLocked: false }
             ];
         }
 
         // Otherwise, only show units that actually have booths (never show 0-score units in top 3)
         const unitsWithScore = sortedUnits.filter(u => u.booths && u.booths.length > 0);
-        const actualTop3 = unitsWithScore.slice(0, 3);
+        const actualTop3 = unitsWithScore.slice(0, 3).map(u => ({ ...u, isLocked: false }));
 
         // If showZero is enabled, always fill to 3 positions with placeholders
         if (config.showZero !== false) {
@@ -123,7 +160,8 @@ export default function Dashboard() {
                     id: `placeholder-${result.length + 1}`,
                     name: '',
                     booths: [],
-                    isPlaceholder: true
+                    isPlaceholder: true,
+                    isLocked: false
                 });
             }
             return result;
@@ -131,15 +169,12 @@ export default function Dashboard() {
 
         // If showZero is disabled, only return units with scores
         return actualTop3;
-    }, [sortedUnits, config.showZero]);
+    }, [sortedUnits, config.showZero, config.lockedTop3, units]);
 
-    // Filter out units that are actually displayed in top 3 (not placeholders)
+    // Show ALL units in general ranking (including locked top 3 if they're finished)
     const rest = useMemo(() => {
-        const top3Ids = top3
-            .filter(unit => !unit.isPlaceholder)
-            .map(unit => unit.id);
-        return sortedUnits.filter(unit => !top3Ids.includes(unit.id));
-    }, [sortedUnits, top3]);
+        return sortedUnits; // Show everyone in the general ranking
+    }, [sortedUnits]);
     const totalPages = Math.ceil(rest.length / PAGE_SIZE) || 1;
 
     // Auto-rotate pages
@@ -535,7 +570,13 @@ function PodiumBar({ unit, rank, color, height, delay, availableBooths }) {
             transition={{ type: "spring", stiffness: 60, damping: 15 }}
         >
             {!isPlaceholder && (
-                <div className="mb-2 lg:mb-4 text-center flex flex-col items-center gap-1 lg:gap-2">
+                <div className="mb-2 lg:mb-4 text-center flex flex-col items-center gap-1 lg:gap-2 relative">
+                    {/* Lock indicator for locked positions */}
+                    {unit.isLocked && (
+                        <div className="absolute -top-1 -right-1 lg:-top-2 lg:-right-2 bg-yellow-500 rounded-full p-1 lg:p-1.5 shadow-lg ring-2 ring-yellow-400/50 z-20">
+                            <span className="text-xs lg:text-sm">🔒</span>
+                        </div>
+                    )}
                     <UnitLogo unit={unit} className="w-10 h-10 lg:w-14 lg:h-14 ring-2 lg:ring-4 ring-black/20" />
                     <motion.div
                         className="text-xs lg:text-sm font-bold text-slate-200 bg-slate-900/60 px-2 lg:px-3 py-0.5 lg:py-1 rounded-full border border-white/10 backdrop-blur-sm mt-0.5 lg:mt-1 shadow-lg whitespace-nowrap"

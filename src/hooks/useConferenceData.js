@@ -101,7 +101,8 @@ const getInitialConfig = () => {
         pageSize: 10,
         showZero: false,
         storageType: 'firebase',
-        availableBooths: getDefaultBooths()
+        availableBooths: getDefaultBooths(),
+        lockedTop3: [null, null, null] // IDs of first 3 units to finish
     };
 
     if (!stored) return defaultConfig;
@@ -110,6 +111,10 @@ const getInitialConfig = () => {
     // Ensure availableBooths exists
     if (!parsed.availableBooths) {
         parsed.availableBooths = getDefaultBooths();
+    }
+    // Ensure lockedTop3 exists
+    if (!parsed.lockedTop3) {
+        parsed.lockedTop3 = [null, null, null];
     }
     return parsed;
 };
@@ -327,6 +332,31 @@ export function useConferenceData() {
 
         console.log(`✅ Booth added to unit: ${booth?.name} → ${unit?.name}`);
         saveUnits(newUnits);
+
+        // Check if this unit just completed all booths
+        const updatedUnit = newUnits.find(u => u.id === unitId);
+        const totalBooths = config.availableBooths?.length || 0;
+        const unitBooths = updatedUnit?.booths?.length || 0;
+
+        if (unitBooths === totalBooths && totalBooths > 0) {
+            // Unit just completed all booths!
+            const currentLockedTop3 = config.lockedTop3 || [null, null, null];
+
+            // Check if this unit is already locked
+            if (!currentLockedTop3.includes(unitId)) {
+                // Find first empty slot
+                const emptySlotIndex = currentLockedTop3.findIndex(id => id === null);
+
+                if (emptySlotIndex !== -1) {
+                    // Lock this unit in the first available position
+                    const newLockedTop3 = [...currentLockedTop3];
+                    newLockedTop3[emptySlotIndex] = unitId;
+
+                    console.log(`🏆 Unit ${unit?.name} locked in position ${emptySlotIndex + 1}!`);
+                    updateConfig({ lockedTop3: newLockedTop3 });
+                }
+            }
+        }
     };
 
     const removeBoothFromUnit = (unitId, boothId) => {
