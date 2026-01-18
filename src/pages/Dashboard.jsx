@@ -97,7 +97,41 @@ export default function Dashboard() {
         return [...filtered].sort((a, b) => (b.booths?.length || 0) - (a.booths?.length || 0));
     }, [units, config.showZero]);
 
-    const top3 = useMemo(() => sortedUnits.slice(0, 3), [sortedUnits]);
+    // Create placeholder podium data when showZero is enabled and everyone is at 0
+    const top3 = useMemo(() => {
+        // Check if anyone has any booths
+        const hasAnyScore = sortedUnits.some(u => u.booths && u.booths.length > 0);
+
+        // If showZero is enabled and NO ONE has any booths yet, create placeholders for visual appeal
+        if (config.showZero !== false && !hasAnyScore) {
+            return [
+                { id: 'placeholder-1', name: '', booths: [], isPlaceholder: true },
+                { id: 'placeholder-2', name: '', booths: [], isPlaceholder: true },
+                { id: 'placeholder-3', name: '', booths: [], isPlaceholder: true }
+            ];
+        }
+
+        // Otherwise, only show units that actually have booths (never show 0-score units in top 3)
+        const unitsWithScore = sortedUnits.filter(u => u.booths && u.booths.length > 0);
+        const actualTop3 = unitsWithScore.slice(0, 3);
+
+        // If showZero is enabled, always fill to 3 positions with placeholders
+        if (config.showZero !== false) {
+            const result = [...actualTop3];
+            while (result.length < 3) {
+                result.push({
+                    id: `placeholder-${result.length + 1}`,
+                    name: '',
+                    booths: [],
+                    isPlaceholder: true
+                });
+            }
+            return result;
+        }
+
+        // If showZero is disabled, only return units with scores
+        return actualTop3;
+    }, [sortedUnits, config.showZero]);
     const rest = useMemo(() => sortedUnits.slice(3), [sortedUnits]);
     const totalPages = Math.ceil(rest.length / PAGE_SIZE) || 1;
 
@@ -453,12 +487,18 @@ function UnitLogo({ unit, className }) {
         return (
             <img
                 src={logoSrc}
-                alt={unit.name}
+                alt={unit.name || 'Unit'}
                 className={clsx("rounded-full border-2 border-slate-600/50 shadow-lg object-cover bg-white", className)}
             />
         );
     }
-    // Fallback
+    // Fallback - check if name exists
+    if (!unit.name) {
+        // Return empty placeholder for units without names
+        return (
+            <div className={clsx("rounded-full border-2 border-slate-600/50 shadow-lg bg-slate-700", className)} />
+        );
+    }
     const url = `https://ui-avatars.com/api/?name=${encodeURIComponent(unit.name)}&background=random&color=fff&bold=true`;
     return (
         <img
@@ -477,6 +517,9 @@ function PodiumBar({ unit, rank, color, height, delay, availableBooths }) {
     const unitBooths = unit.booths?.length || 0;
     const progressPercent = Math.min(100, (unitBooths / totalBooths) * 100);
 
+    // Check if this is a placeholder
+    const isPlaceholder = unit.isPlaceholder === true;
+
     return (
         <motion.div
             layoutId={`unit-${unit.id}`}
@@ -484,16 +527,18 @@ function PodiumBar({ unit, rank, color, height, delay, availableBooths }) {
             style={{ height: "100%" }}
             transition={{ type: "spring", stiffness: 60, damping: 15 }}
         >
-            <div className="mb-2 lg:mb-4 text-center flex flex-col items-center gap-1 lg:gap-2">
-                <UnitLogo unit={unit} className="w-10 h-10 lg:w-14 lg:h-14 ring-2 lg:ring-4 ring-black/20" />
-                <motion.div
-                    className="text-xs lg:text-sm font-bold text-slate-200 bg-slate-900/60 px-2 lg:px-3 py-0.5 lg:py-1 rounded-full border border-white/10 backdrop-blur-sm mt-0.5 lg:mt-1 shadow-lg whitespace-nowrap"
-                    layout
-                >
-                    {unit.name}
-                </motion.div>
-                <div className="font-mono font-black text-white text-xl lg:text-3xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{unit.booths?.length || 0}</div>
-            </div>
+            {!isPlaceholder && (
+                <div className="mb-2 lg:mb-4 text-center flex flex-col items-center gap-1 lg:gap-2">
+                    <UnitLogo unit={unit} className="w-10 h-10 lg:w-14 lg:h-14 ring-2 lg:ring-4 ring-black/20" />
+                    <motion.div
+                        className="text-xs lg:text-sm font-bold text-slate-200 bg-slate-900/60 px-2 lg:px-3 py-0.5 lg:py-1 rounded-full border border-white/10 backdrop-blur-sm mt-0.5 lg:mt-1 shadow-lg whitespace-nowrap"
+                        layout
+                    >
+                        {unit.name}
+                    </motion.div>
+                    <div className="font-mono font-black text-white text-xl lg:text-3xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{unit.booths?.length || 0}</div>
+                </div>
+            )}
 
             {/* Podium Pillar Container (Track) */}
             <motion.div

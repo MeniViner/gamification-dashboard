@@ -135,11 +135,11 @@ export function useConferenceData() {
                 // Load config from Firebase if in Firebase mode
                 if (storageType === 'firebase') {
                     const firebaseConfig = await loadConfig();
-                    if (firebaseConfig && firebaseConfig.availableBooths && isMounted) {
-                        // Merge Firebase booths with local config (preserve local settings)
+                    if (firebaseConfig && isMounted) {
+                        // Merge ALL Firebase config properties (including showZero, pageSize, etc.)
                         setConfig(prev => ({
                             ...prev,
-                            availableBooths: firebaseConfig.availableBooths
+                            ...firebaseConfig // Merge all properties from Firebase
                         }));
                     }
                 }
@@ -185,13 +185,14 @@ export function useConferenceData() {
             }
         });
 
-        // Subscribe to config changes (for booth definitions)
+        // Subscribe to config changes (for booth definitions and all other settings)
         unsubscribeConfig = subscribeToConfig((updatedConfig) => {
-            if (updatedConfig && updatedConfig.availableBooths) {
-                console.log('🔄 Received Firebase config update, booths count:', updatedConfig.availableBooths.length);
+            if (updatedConfig) {
+                console.log('🔄 Received Firebase config update, booths count:', updatedConfig.availableBooths?.length);
+                // Merge ALL config properties from Firebase, not just availableBooths
                 setConfig(prev => ({
                     ...prev,
-                    availableBooths: updatedConfig.availableBooths
+                    ...updatedConfig // This will include showZero, pageSize, storageType, etc.
                 }));
             }
         });
